@@ -18,6 +18,10 @@ import { NotFoundPage } from '@/pages/NotFoundPage'
 import { ProductsPage } from '@/pages/master/ProductsPage'
 import { CustomersPage } from '@/pages/master/CustomersPage'
 import { VendorsPage } from '@/pages/master/VendorsPage'
+import { SalesOrdersPage } from '@/pages/sales/SalesOrdersPage'
+import { CreateSalePage } from '@/pages/sales/CreateSalePage'
+import { SaleDetailsPage } from '@/pages/sales/SaleDetailsPage'
+import { SalesReportsPage } from '@/pages/sales/SalesReportsPage'
 
 function SessionBootstrap() {
   const setBootstrapping = useAuthStore((state) => state.setBootstrapping)
@@ -73,7 +77,7 @@ export function AppRouter() {
               path="/sales/orders"
               element={
                 <PermissionRoute permission="sales:read">
-                  <ModulePlaceholderPage title="Sales Orders" />
+                  <SalesOrdersPage />
                 </PermissionRoute>
               }
             />
@@ -81,7 +85,23 @@ export function AppRouter() {
               path="/sales/new"
               element={
                 <PermissionRoute permission="sales:create">
-                  <ModulePlaceholderPage title="Record New Sale" />
+                  <CreateSalePage />
+                </PermissionRoute>
+              }
+            />
+            <Route
+              path="/sales/:id"
+              element={
+                <PermissionRoute permission="sales:read">
+                  <SaleDetailsPage />
+                </PermissionRoute>
+              }
+            />
+            <Route
+              path="/sales/reports"
+              element={
+                <PermissionRoute permission="sales:read">
+                  <SalesReportsPage />
                 </PermissionRoute>
               }
             />
