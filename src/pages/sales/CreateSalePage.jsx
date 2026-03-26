@@ -10,7 +10,7 @@ import {
 import { getApiMessage } from '@/lib/api-response'
 
 function getStockText(product) {
-  if (!product) return '-'
+  if (!product) return ''
   if (product.stockQuantity <= 0) return 'No stock'
   return `In stock: ${product.stockQuantity}`
 }

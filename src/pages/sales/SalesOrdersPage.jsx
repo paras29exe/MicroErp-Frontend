@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
+import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SalesFilterDialog } from '@/components/sales/SalesFilterDialog'
 import { deleteSale, getSalesList } from '@/features/sales/sales.api'
 import { getApiMessage } from '@/lib/api-response'
+import { formatDateDDMMYYYY } from '@/lib/date-format'
 import { hasPermission } from '@/lib/permissions'
 import { useAuthStore } from '@/features/auth/auth.store'
 
@@ -17,10 +19,7 @@ function formatAmount(value) {
 }
 
 function formatDate(value) {
-  if (!value) return '-'
-  const d = new Date(value)
-  if (Number.isNaN(d.getTime())) return '-'
-  return d.toLocaleDateString()
+  return formatDateDDMMYYYY(value)
 }
 
 function getFiltersFromSearchParams(searchParams) {
@@ -33,6 +32,12 @@ function getFiltersFromSearchParams(searchParams) {
     startDate: searchParams.get('startDate') || '',
     endDate: searchParams.get('endDate') || '',
   }
+}
+
+function SortIcon({ active, direction }) {
+  if (!active) return <ArrowUpDown className="h-3.5 w-3.5 text-slate-400" />
+  if (direction === 'asc') return <ArrowUp className="h-3.5 w-3.5 text-slate-700" />
+  return <ArrowDown className="h-3.5 w-3.5 text-slate-700" />
 }
 
 export function SalesOrdersPage() {
@@ -49,6 +54,8 @@ export function SalesOrdersPage() {
 
   const page = parsePositiveInt(searchParams.get('page'), 1)
   const limit = parsePositiveInt(searchParams.get('limit'), 20)
+  const sortBy = searchParams.get('sortBy') || 'saleDate'
+  const sortOrder = searchParams.get('sortOrder') === 'asc' ? 'asc' : 'desc'
   const filters = useMemo(() => getFiltersFromSearchParams(searchParams), [searchParams])
 
   const canGoPrev = page > 1
@@ -69,6 +76,8 @@ export function SalesOrdersPage() {
         ...(filters.profit ? { profit: filters.profit } : {}),
         ...(filters.startDate ? { startDate: filters.startDate } : {}),
         ...(filters.endDate ? { endDate: filters.endDate } : {}),
+        sortBy,
+        sortOrder,
       })
 
       setRows(data.items)
@@ -89,8 +98,12 @@ export function SalesOrdersPage() {
 
     const nextPage = nextState.page ?? page
     const nextLimit = nextState.limit ?? limit
+    const nextSortBy = nextState.sortBy ?? sortBy
+    const nextSortOrder = nextState.sortOrder ?? sortOrder
     params.set('page', String(nextPage))
     params.set('limit', String(nextLimit))
+    params.set('sortBy', nextSortBy)
+    params.set('sortOrder', nextSortOrder)
 
     const nextFilters = nextState.filters || filters
     Object.entries(nextFilters).forEach(([key, value]) => {
@@ -116,6 +129,11 @@ export function SalesOrdersPage() {
     } catch (apiError) {
       setError(getApiMessage(apiError, 'Failed to delete sale'))
     }
+  }
+
+  function toggleSort(field) {
+    const nextOrder = sortBy === field && sortOrder === 'desc' ? 'asc' : 'desc'
+    updateQuery({ page: 1, sortBy: field, sortOrder: nextOrder })
   }
 
   return (
@@ -152,10 +170,37 @@ export function SalesOrdersPage() {
                 <tr>
                   <th>Sale ID</th>
                   <th>Customer</th>
-                  <th>Sale Date</th>
-                  <th>Gross Sales</th>
+                  <th>
+                    <button
+                      type="button"
+                      className="inline-flex items-center gap-1"
+                      onClick={() => toggleSort('saleDate')}
+                    >
+                      <span>Sale Date</span>
+                      <SortIcon active={sortBy === 'saleDate'} direction={sortOrder} />
+                    </button>
+                  </th>
+                  <th>
+                    <button
+                      type="button"
+                      className="inline-flex items-center gap-1"
+                      onClick={() => toggleSort('grossSales')}
+                    >
+                      <span>Total Amount</span>
+                      <SortIcon active={sortBy === 'grossSales'} direction={sortOrder} />
+                    </button>
+                  </th>
                   <th>COGS</th>
-                  <th>Profit</th>
+                  <th>
+                    <button
+                      type="button"
+                      className="inline-flex items-center gap-1"
+                      onClick={() => toggleSort('grossProfit')}
+                    >
+                      <span>Profit</span>
+                      <SortIcon active={sortBy === 'grossProfit'} direction={sortOrder} />
+                    </button>
+                  </th>
                   <th>Items</th>
                   <th>Actions</th>
                 </tr>

@@ -7,6 +7,7 @@ import {
   updateProduct,
 } from '@/features/master/products.api'
 import { getApiMessage } from '@/lib/api-response'
+import { formatDateDDMMYYYY } from '@/lib/date-format'
 import { useAuthStore } from '@/features/auth/auth.store'
 import { hasPermission } from '@/lib/permissions'
 
@@ -18,12 +19,7 @@ const CATEGORY_OPTIONS = [
 ]
 
 function formatDate(value) {
-  if (!value) return '-'
-
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return '-'
-
-  return date.toLocaleDateString()
+  return formatDateDDMMYYYY(value)
 }
 
 function parsePositiveInt(value, fallback = 1) {
