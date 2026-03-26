@@ -1,0 +1,252 @@
+import { useEffect, useMemo, useState } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
+import { Button } from '@/components/ui/button'
+import { SalesFilterDialog } from '@/components/sales/SalesFilterDialog'
+import { deleteSale, getSalesList } from '@/features/sales/sales.api'
+import { getApiMessage } from '@/lib/api-response'
+import { hasPermission } from '@/lib/permissions'
+import { useAuthStore } from '@/features/auth/auth.store'
+
+function parsePositiveInt(value, fallback) {
+  const parsed = Number.parseInt(value || '', 10)
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback
+}
+
+function formatAmount(value) {
+  return Number(value || 0).toFixed(2)
+}
+
+function formatDate(value) {
+  if (!value) return '-'
+  const d = new Date(value)
+  if (Number.isNaN(d.getTime())) return '-'
+  return d.toLocaleDateString()
+}
+
+function getFiltersFromSearchParams(searchParams) {
+  return {
+    search: searchParams.get('search') || '',
+    customer: searchParams.get('customer') || '',
+    productName: searchParams.get('productName') || '',
+    productId: searchParams.get('productId') || '',
+    profit: searchParams.get('profit') || '',
+    startDate: searchParams.get('startDate') || '',
+    endDate: searchParams.get('endDate') || '',
+  }
+}
+
+export function SalesOrdersPage() {
+  const user = useAuthStore((state) => state.user)
+  const canDelete = hasPermission(user?.role, 'sales:delete')
+
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [notice, setNotice] = useState('')
+  const [rows, setRows] = useState([])
+  const [meta, setMeta] = useState({ page: 1, limit: 20, total: 0, totalPages: 1 })
+  const [filtersOpen, setFiltersOpen] = useState(false)
+
+  const page = parsePositiveInt(searchParams.get('page'), 1)
+  const limit = parsePositiveInt(searchParams.get('limit'), 20)
+  const filters = useMemo(() => getFiltersFromSearchParams(searchParams), [searchParams])
+
+  const canGoPrev = page > 1
+  const canGoNext = page < meta.totalPages
+
+  async function loadData() {
+    setLoading(true)
+    setError('')
+
+    try {
+      const data = await getSalesList({
+        page,
+        limit,
+        ...(filters.search ? { search: filters.search } : {}),
+        ...(filters.customer ? { customerName: filters.customer, customerPhone: filters.customer } : {}),
+        ...(filters.productName ? { productName: filters.productName } : {}),
+        ...(filters.productId ? { productId: filters.productId } : {}),
+        ...(filters.profit ? { profit: filters.profit } : {}),
+        ...(filters.startDate ? { startDate: filters.startDate } : {}),
+        ...(filters.endDate ? { endDate: filters.endDate } : {}),
+      })
+
+      setRows(data.items)
+      setMeta(data.meta)
+    } catch (apiError) {
+      setError(getApiMessage(apiError, 'Failed to load sales orders'))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    loadData()
+  }, [searchParams])
+
+  function updateQuery(nextState) {
+    const params = new URLSearchParams(searchParams)
+
+    const nextPage = nextState.page ?? page
+    const nextLimit = nextState.limit ?? limit
+    params.set('page', String(nextPage))
+    params.set('limit', String(nextLimit))
+
+    const nextFilters = nextState.filters || filters
+    Object.entries(nextFilters).forEach(([key, value]) => {
+      const normalized = String(value || '').trim()
+      if (normalized) params.set(key, normalized)
+      else params.delete(key)
+    })
+
+    setSearchParams(params)
+  }
+
+  async function handleDelete(row) {
+    if (!canDelete) return
+    if (!window.confirm(`Delete sale #${row.id}? Stock will be restored.`)) return
+
+    setError('')
+    setNotice('')
+
+    try {
+      await deleteSale(row.id)
+      setNotice(`Sale #${row.id} deleted and inventory restored`)
+      await loadData()
+    } catch (apiError) {
+      setError(getApiMessage(apiError, 'Failed to delete sale'))
+    }
+  }
+
+  return (
+    <section className="space-y-3">
+      <header className="flex flex-wrap items-center justify-between gap-2 border border-slate-300 bg-white px-3 py-2">
+        <div>
+          <h2 className="text-sm font-semibold text-blue-700">Sales Orders</h2>
+          <p className="text-xs text-slate-500">View and delete sales orders. No edit flow.</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button type="button" variant="outline" onClick={() => setFiltersOpen(true)}>
+            Filters
+          </Button>
+          <Button render={<Link to="/sales/new" />} className="bg-green-700 text-white hover:bg-green-800">
+            Record New Sale
+          </Button>
+        </div>
+      </header>
+
+      <section className="border border-slate-300 bg-white px-3 py-2 text-xs text-slate-600">
+        <span className="font-semibold text-slate-700">Search:</span> {filters.search || 'None'}
+        <span className="ml-4 font-semibold text-slate-700">Total:</span> {meta.total}
+      </section>
+
+      {notice && <div className="border border-green-300 bg-green-50 px-3 py-2 text-sm text-green-700">{notice}</div>}
+      {loading && <div className="border border-slate-300 bg-white px-3 py-2 text-sm">Loading sales...</div>}
+      {error && <div className="border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
+
+      {!loading && !error && (
+        <section className="border border-slate-300 bg-white p-3">
+          <div className="overflow-x-auto">
+            <table className="dense-table">
+              <thead>
+                <tr>
+                  <th>Sale ID</th>
+                  <th>Customer</th>
+                  <th>Sale Date</th>
+                  <th>Gross Sales</th>
+                  <th>COGS</th>
+                  <th>Profit</th>
+                  <th>Items</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.length === 0 && (
+                  <tr>
+                    <td colSpan={8} className="text-center text-slate-500">No sales found</td>
+                  </tr>
+                )}
+                {rows.map((row) => (
+                  <tr key={row.id}>
+                    <td>#{row.id}</td>
+                    <td>{row.customer?.name || '-'}</td>
+                    <td>{formatDate(row.saleDate)}</td>
+                    <td>{formatAmount(row.grossSales)}</td>
+                    <td>{formatAmount(row.totalCogs)}</td>
+                    <td className={Number(row.grossProfit) < 0 ? 'text-red-700' : 'text-green-700'}>
+                      {formatAmount(row.grossProfit)}
+                    </td>
+                    <td>{row.items?.length || 0}</td>
+                    <td>
+                      <div className="flex items-center gap-2">
+                        <Button render={<Link to={`/sales/${row.id}`} />} variant="outline" size="sm">
+                          View
+                        </Button>
+                        {canDelete && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="border-red-300 text-red-700"
+                            onClick={() => handleDelete(row)}
+                          >
+                            Delete
+                          </Button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <footer className="mt-3 flex items-center justify-end gap-2 border-t border-slate-200 pt-3">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={!canGoPrev}
+              onClick={() => updateQuery({ page: page - 1 })}
+            >
+              Previous
+            </Button>
+            <span className="text-xs text-slate-600">Page {page} of {meta.totalPages}</span>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={!canGoNext}
+              onClick={() => updateQuery({ page: page + 1 })}
+            >
+              Next
+            </Button>
+          </footer>
+        </section>
+      )}
+
+      <SalesFilterDialog
+        open={filtersOpen}
+        onOpenChange={setFiltersOpen}
+        value={filters}
+        onApply={(nextFilters) => {
+          updateQuery({ page: 1, filters: nextFilters })
+        }}
+        onReset={() => {
+          updateQuery({
+            page: 1,
+            filters: {
+              search: '',
+              customer: '',
+              productName: '',
+              productId: '',
+              profit: '',
+              startDate: '',
+              endDate: '',
+            },
+          })
+        }}
+      />
+    </section>
+  )
+}

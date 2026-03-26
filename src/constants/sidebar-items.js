@@ -82,6 +82,16 @@ const NAV_SECTIONS = [
             },
           },
           {
+            title: 'Sales Reports',
+            href: '/sales/reports',
+            permission: 'sales:read',
+            icon: BarChart3,
+            api: {
+              module: '/api/sales',
+              endpoints: ['/get-sales'],
+            },
+          },
+          {
             title: 'Purchase Orders',
             href: '/purchases/orders',
             permission: 'purchase:read',
