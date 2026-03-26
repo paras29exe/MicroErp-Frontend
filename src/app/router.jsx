@@ -22,6 +22,9 @@ import { SalesOrdersPage } from '@/pages/sales/SalesOrdersPage'
 import { CreateSalePage } from '@/pages/sales/CreateSalePage'
 import { SaleDetailsPage } from '@/pages/sales/SaleDetailsPage'
 import { SalesReportsPage } from '@/pages/sales/SalesReportsPage'
+import { KpiSnapshotPage } from '@/pages/KpiSnapshotPage'
+import { OperationalAlertsPage } from '@/pages/OperationalAlertsPage'
+import { PurchaseOrdersPage } from '@/pages/purchases/PurchaseOrdersPage'
 
 function SessionBootstrap() {
   const setBootstrapping = useAuthStore((state) => state.setBootstrapping)
@@ -61,7 +64,7 @@ export function AppRouter() {
               path="/dashboard/kpis"
               element={
                 <PermissionRoute permission="dashboard:read">
-                  <ModulePlaceholderPage title="KPI Snapshot" />
+                  <KpiSnapshotPage />
                 </PermissionRoute>
               }
             />
@@ -69,7 +72,7 @@ export function AppRouter() {
               path="/dashboard/alerts"
               element={
                 <PermissionRoute permission="dashboard:read">
-                  <ModulePlaceholderPage title="Operational Alerts" />
+                  <OperationalAlertsPage />
                 </PermissionRoute>
               }
             />
@@ -109,7 +112,7 @@ export function AppRouter() {
               path="/purchases/orders"
               element={
                 <PermissionRoute permission="purchase:read">
-                  <ModulePlaceholderPage title="Purchase Orders" />
+                  <PurchaseOrdersPage />
                 </PermissionRoute>
               }
             />

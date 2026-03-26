@@ -3,16 +3,14 @@ import { Link, useParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { getSaleById } from '@/features/sales/sales.api'
 import { getApiMessage } from '@/lib/api-response'
+import { formatDateDDMMYYYY } from '@/lib/date-format'
 
 function formatAmount(value) {
   return Number(value || 0).toFixed(2)
 }
 
 function formatDate(value) {
-  if (!value) return '-'
-  const d = new Date(value)
-  if (Number.isNaN(d.getTime())) return '-'
-  return d.toLocaleDateString()
+  return formatDateDDMMYYYY(value)
 }
 
 export function SaleDetailsPage() {
