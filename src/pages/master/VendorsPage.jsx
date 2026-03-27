@@ -4,12 +4,15 @@ import {
   createVendor,
   deleteVendor,
   getVendorsList,
+  restoreVendor,
   updateVendor,
 } from '@/features/master/vendors.api'
+import { ConfirmDialog } from '@/components/common/confirm-dialog'
 import { getApiMessage } from '@/lib/api-response'
 import { formatDateDDMMYYYY } from '@/lib/date-format'
 import { useAuthStore } from '@/features/auth/auth.store'
 import { hasPermission } from '@/lib/permissions'
+import { toast } from 'sonner'
 
 function formatDate(value) {
   return formatDateDDMMYYYY(value)
@@ -19,6 +22,12 @@ function parsePositiveInt(value, fallback = 1) {
   const parsed = Number.parseInt(value || '', 10)
   return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback
 }
+
+const STATUS_OPTIONS = [
+  { label: 'Active', value: 'active' },
+  { label: 'Archived', value: 'archived' },
+  { label: 'All', value: 'all' },
+]
 
 export function VendorsPage() {
   const user = useAuthStore((state) => state.user)
@@ -30,7 +39,8 @@ export function VendorsPage() {
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [notice, setNotice] = useState('')
+  const [deleteTarget, setDeleteTarget] = useState(null)
+  const [deleting, setDeleting] = useState(false)
   const [items, setItems] = useState([])
   const [meta, setMeta] = useState({ page: 1, pageSize: 20, total: 0, totalPages: 1 })
 
@@ -40,11 +50,16 @@ export function VendorsPage() {
   const [form, setForm] = useState({ name: '', phone: '', email: '', address: '' })
 
   const initialSearch = (searchParams.get('search') || '').trim()
+  const initialStatusRaw = searchParams.get('status') || 'active'
+  const initialStatus = STATUS_OPTIONS.some((option) => option.value === initialStatusRaw)
+    ? initialStatusRaw
+    : 'active'
   const initialPage = parsePositiveInt(searchParams.get('page'), 1)
 
   const [draftSearch, setDraftSearch] = useState(initialSearch)
-
+  const [draftStatus, setDraftStatus] = useState(initialStatus)
   const [search, setSearch] = useState(initialSearch)
+  const [status, setStatus] = useState(initialStatus)
   const [page, setPage] = useState(initialPage)
   const pageSize = 20
 
@@ -72,11 +87,17 @@ export function VendorsPage() {
 
   useEffect(() => {
     const nextSearch = (searchParams.get('search') || '').trim()
+    const nextStatusRaw = searchParams.get('status') || 'active'
+    const nextStatus = STATUS_OPTIONS.some((option) => option.value === nextStatusRaw)
+      ? nextStatusRaw
+      : 'active'
     const nextPage = parsePositiveInt(searchParams.get('page'), 1)
 
     setSearch(nextSearch)
+    setStatus(nextStatus)
     setPage(nextPage)
     setDraftSearch(nextSearch)
+    setDraftStatus(nextStatus)
   }, [searchParams])
 
   useEffect(() => {
@@ -85,12 +106,24 @@ export function VendorsPage() {
     if (search) params.set('search', search)
     else params.delete('search')
 
+    if (status !== 'active') params.set('status', status)
+    else params.delete('status')
+
     params.set('page', String(page))
 
     if (params.toString() !== searchParams.toString()) {
       setSearchParams(params, { replace: true })
     }
-  }, [search, page, searchParams, setSearchParams])
+  }, [search, status, page, searchParams, setSearchParams])
+
+  useEffect(() => {
+    loadVendors({
+      page,
+      pageSize,
+      status,
+      ...(search ? { search } : {}),
+    })
+  }, [page, pageSize, status, search])
 
   function resetForm() {
     setEditingId(null)
@@ -112,7 +145,6 @@ export function VendorsPage() {
   async function handleSubmit(event) {
     event.preventDefault()
     setFormError('')
-    setNotice('')
 
     if (!form.name.trim()) {
       setFormError('Vendor name is required')
@@ -130,10 +162,10 @@ export function VendorsPage() {
     try {
       if (editingId) {
         await updateVendor(editingId, payload)
-        setNotice('Vendor updated successfully')
+        toast.success('Vendor updated successfully')
       } else {
         await createVendor(payload)
-        setNotice('Vendor created successfully')
+        toast.success('Vendor created successfully')
       }
 
       resetForm()
@@ -141,6 +173,7 @@ export function VendorsPage() {
       await loadVendors({
         page: 1,
         pageSize,
+        status,
         ...(search ? { search } : {}),
       })
     } catch (apiError) {
@@ -150,35 +183,52 @@ export function VendorsPage() {
     }
   }
 
-  async function handleDelete(item) {
-    if (!canDelete) return
+  async function handleConfirmDelete() {
+    if (!canDelete || !deleteTarget) return
 
-    const confirmed = window.confirm(`Delete vendor \"${item.name}\"?`)
-    if (!confirmed) return
-
+    setDeleting(true)
     setError('')
-    setNotice('')
 
     try {
-      await deleteVendor(item.id)
-      setNotice('Vendor deleted successfully')
+      await deleteVendor(deleteTarget.id)
+      toast.success('Vendor archived successfully')
+      setDeleteTarget(null)
       await loadVendors({
         page,
         pageSize,
+        status,
         ...(search ? { search } : {}),
       })
     } catch (apiError) {
-      setError(getApiMessage(apiError, 'Failed to delete vendor'))
+      const message = getApiMessage(apiError, 'Failed to archive vendor')
+      toast.error(message)
+      setDeleteTarget(null)
+      setError(message)
+    } finally {
+      setDeleting(false)
     }
   }
 
-  useEffect(() => {
-    loadVendors({
-      page,
-      pageSize,
-      ...(search ? { search } : {}),
-    })
-  }, [page, pageSize, search])
+  async function handleRestoreVendor(item) {
+    if (!canUpdate || !item?.id) return
+
+    setError('')
+
+    try {
+      await restoreVendor(item.id)
+      toast.success('Vendor restored successfully')
+      await loadVendors({
+        page,
+        pageSize,
+        status,
+        ...(search ? { search } : {}),
+      })
+    } catch (apiError) {
+      const message = getApiMessage(apiError, 'Failed to restore vendor')
+      toast.error(message)
+      setError(message)
+    }
+  }
 
   return (
     <section className="space-y-3">
@@ -194,30 +244,49 @@ export function VendorsPage() {
             event.preventDefault()
             setPage(1)
             setSearch(draftSearch.trim())
+            setStatus(draftStatus)
           }}
         >
+          <select
+            value={draftStatus}
+            onChange={(event) => setDraftStatus(event.target.value)}
+            className="rounded-sm border border-slate-300 px-2 py-1 text-xs"
+          >
+            {STATUS_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
           <input
-            type="text"
             value={draftSearch}
             onChange={(event) => setDraftSearch(event.target.value)}
             placeholder="Search name, phone, email, address"
-            className="min-w-64 rounded-sm border border-slate-300 px-2 py-1 text-xs"
+            className="min-w-56 rounded-sm border border-slate-300 px-2 py-1 text-xs"
           />
           <button
             type="submit"
-            className="rounded-sm bg-green-700 px-3 py-1 text-xs font-semibold text-white hover:bg-green-800"
+            className="rounded-sm border border-slate-300 px-2 py-1 text-xs"
           >
             Apply
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setDraftSearch('')
+              setDraftStatus('active')
+              setSearch('')
+              setStatus('active')
+              setPage(1)
+            }}
+            className="rounded-sm border border-slate-300 px-2 py-1 text-xs"
+          >
+            Clear
           </button>
         </form>
       </header>
 
-      <section className="border border-slate-300 bg-white px-3 py-2 text-xs text-slate-600">
-        <span className="font-semibold text-slate-700">Search:</span> {search || 'None'}
-        <span className="ml-4 font-semibold text-slate-700">Total:</span> {meta.total}
-      </section>
-
-      {(canCreate || (canUpdate && editingId)) && (
+      {canCreate && (
         <section className="border border-slate-300 bg-white p-3">
           <div className="mb-2 flex items-center justify-between">
             <h3 className="text-xs font-semibold text-slate-700">
@@ -276,12 +345,10 @@ export function VendorsPage() {
         </section>
       )}
 
-      {notice && <div className="border border-green-300 bg-green-50 px-3 py-2 text-sm text-green-700">{notice}</div>}
-
       {loading && <div className="border border-slate-300 bg-white px-3 py-2 text-sm">Loading vendors...</div>}
       {error && <div className="border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
 
-      {!loading && !error && (
+      {!loading && (
         <section className="border border-slate-300 bg-white p-3">
           <div className="overflow-x-auto">
             <table className="dense-table">
@@ -291,6 +358,7 @@ export function VendorsPage() {
                   <th>Phone</th>
                   <th>Email</th>
                   <th>Address</th>
+                  <th>Status</th>
                   <th>Updated</th>
                   {(canUpdate || canDelete) && <th>Actions</th>}
                 </tr>
@@ -298,7 +366,7 @@ export function VendorsPage() {
               <tbody>
                 {items.length === 0 && (
                   <tr>
-                    <td colSpan={canUpdate || canDelete ? 6 : 5} className="text-center text-slate-500">
+                    <td colSpan={canUpdate || canDelete ? 7 : 6} className="text-center text-slate-500">
                       No vendors found
                     </td>
                   </tr>
@@ -309,11 +377,22 @@ export function VendorsPage() {
                     <td>{item.phone || '-'}</td>
                     <td>{item.email || '-'}</td>
                     <td>{item.address || '-'}</td>
+                    <td>
+                      {item.isDeleted ? (
+                        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800">
+                          Archived
+                        </span>
+                      ) : (
+                        <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-medium text-emerald-800">
+                          Active
+                        </span>
+                      )}
+                    </td>
                     <td>{formatDate(item.updatedAt)}</td>
                     {(canUpdate || canDelete) && (
                       <td>
                         <div className="flex items-center gap-2">
-                          {canUpdate && (
+                          {canUpdate && !item.isDeleted && (
                             <button
                               type="button"
                               onClick={() => handleEdit(item)}
@@ -322,13 +401,22 @@ export function VendorsPage() {
                               Edit
                             </button>
                           )}
-                          {canDelete && (
+                          {canDelete && !item.isDeleted && (
                             <button
                               type="button"
-                              onClick={() => handleDelete(item)}
+                              onClick={() => setDeleteTarget(item)}
                               className="rounded-sm border border-red-300 px-2 py-1 text-xs text-red-700"
                             >
-                              Delete
+                              Archive
+                            </button>
+                          )}
+                          {canUpdate && item.isDeleted && (
+                            <button
+                              type="button"
+                              onClick={() => handleRestoreVendor(item)}
+                              className="rounded-sm border border-emerald-300 px-2 py-1 text-xs text-emerald-700"
+                            >
+                              Restore
                             </button>
                           )}
                         </div>
@@ -363,6 +451,24 @@ export function VendorsPage() {
           </footer>
         </section>
       )}
+
+      <ConfirmDialog
+        open={Boolean(deleteTarget)}
+        onOpenChange={(open) => {
+          if (!open) setDeleteTarget(null)
+        }}
+        title="Archive Vendor"
+        description={
+          deleteTarget
+            ? `Archive vendor \"${deleteTarget.name}\"?`
+            : 'Archive this vendor?'
+        }
+        helperText="This can be reverted later by restoring the archived vendor."
+        confirmText="Archive"
+        destructive
+        loading={deleting}
+        onConfirm={handleConfirmDelete}
+      />
     </section>
   )
 }

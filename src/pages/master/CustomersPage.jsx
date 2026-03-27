@@ -4,12 +4,15 @@ import {
   createCustomer,
   deleteCustomer,
   getCustomersList,
+  restoreCustomer,
   updateCustomer,
 } from '@/features/master/customers.api'
+import { ConfirmDialog } from '@/components/common/confirm-dialog'
 import { getApiMessage } from '@/lib/api-response'
 import { formatDateDDMMYYYY } from '@/lib/date-format'
 import { useAuthStore } from '@/features/auth/auth.store'
 import { hasPermission } from '@/lib/permissions'
+import { toast } from 'sonner'
 
 function formatDate(value) {
   return formatDateDDMMYYYY(value)
@@ -19,6 +22,12 @@ function parsePositiveInt(value, fallback = 1) {
   const parsed = Number.parseInt(value || '', 10)
   return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback
 }
+
+const STATUS_OPTIONS = [
+  { label: 'Active', value: 'active' },
+  { label: 'Archived', value: 'archived' },
+  { label: 'All', value: 'all' },
+]
 
 export function CustomersPage() {
   const user = useAuthStore((state) => state.user)
@@ -30,7 +39,8 @@ export function CustomersPage() {
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [notice, setNotice] = useState('')
+  const [deleteTarget, setDeleteTarget] = useState(null)
+  const [deleting, setDeleting] = useState(false)
   const [items, setItems] = useState([])
   const [meta, setMeta] = useState({ page: 1, pageSize: 20, total: 0, totalPages: 1 })
 
@@ -40,10 +50,16 @@ export function CustomersPage() {
   const [form, setForm] = useState({ name: '', phone: '', email: '', address: '' })
 
   const initialSearch = (searchParams.get('search') || '').trim()
+  const initialStatusRaw = searchParams.get('status') || 'active'
+  const initialStatus = STATUS_OPTIONS.some((option) => option.value === initialStatusRaw)
+    ? initialStatusRaw
+    : 'active'
   const initialPage = parsePositiveInt(searchParams.get('page'), 1)
 
   const [draftSearch, setDraftSearch] = useState(initialSearch)
+  const [draftStatus, setDraftStatus] = useState(initialStatus)
   const [search, setSearch] = useState(initialSearch)
+  const [status, setStatus] = useState(initialStatus)
   const [page, setPage] = useState(initialPage)
   const pageSize = 20
 
@@ -71,11 +87,17 @@ export function CustomersPage() {
 
   useEffect(() => {
     const nextSearch = (searchParams.get('search') || '').trim()
+    const nextStatusRaw = searchParams.get('status') || 'active'
+    const nextStatus = STATUS_OPTIONS.some((option) => option.value === nextStatusRaw)
+      ? nextStatusRaw
+      : 'active'
     const nextPage = parsePositiveInt(searchParams.get('page'), 1)
 
     setSearch(nextSearch)
+    setStatus(nextStatus)
     setPage(nextPage)
     setDraftSearch(nextSearch)
+    setDraftStatus(nextStatus)
   }, [searchParams])
 
   useEffect(() => {
@@ -84,12 +106,24 @@ export function CustomersPage() {
     if (search) params.set('search', search)
     else params.delete('search')
 
+    if (status !== 'active') params.set('status', status)
+    else params.delete('status')
+
     params.set('page', String(page))
 
     if (params.toString() !== searchParams.toString()) {
       setSearchParams(params, { replace: true })
     }
-  }, [search, page, searchParams, setSearchParams])
+  }, [search, status, page, searchParams, setSearchParams])
+
+  useEffect(() => {
+    loadCustomers({
+      page,
+      pageSize,
+      status,
+      ...(search ? { search } : {}),
+    })
+  }, [page, pageSize, status, search])
 
   function resetForm() {
     setEditingId(null)
@@ -111,7 +145,6 @@ export function CustomersPage() {
   async function handleSubmit(event) {
     event.preventDefault()
     setFormError('')
-    setNotice('')
 
     if (!form.name.trim()) {
       setFormError('Customer name is required')
@@ -129,15 +162,15 @@ export function CustomersPage() {
     try {
       if (editingId) {
         await updateCustomer(editingId, payload)
-        setNotice('Customer updated successfully')
+        toast.success('Customer updated successfully')
       } else {
         await createCustomer(payload)
-        setNotice('Customer created successfully')
+        toast.success('Customer created successfully')
       }
 
       resetForm()
       setPage(1)
-      await loadCustomers({ page: 1, pageSize, ...(search ? { search } : {}) })
+      await loadCustomers({ page: 1, pageSize, status, ...(search ? { search } : {}) })
     } catch (apiError) {
       setFormError(getApiMessage(apiError, 'Failed to save customer'))
     } finally {
@@ -145,31 +178,42 @@ export function CustomersPage() {
     }
   }
 
-  async function handleDelete(item) {
-    if (!canDelete) return
+  async function handleConfirmDelete() {
+    if (!canDelete || !deleteTarget) return
 
-    const confirmed = window.confirm(`Delete customer \"${item.name}\"?`)
-    if (!confirmed) return
-
+    setDeleting(true)
     setError('')
-    setNotice('')
 
     try {
-      await deleteCustomer(item.id)
-      setNotice('Customer deleted successfully')
-      await loadCustomers({ page, pageSize, ...(search ? { search } : {}) })
+      await deleteCustomer(deleteTarget.id)
+      toast.success('Customer archived successfully')
+      setDeleteTarget(null)
+      await loadCustomers({ page, pageSize, status, ...(search ? { search } : {}) })
     } catch (apiError) {
-      setError(getApiMessage(apiError, 'Failed to delete customer'))
+      const message = getApiMessage(apiError, 'Failed to archive customer')
+      toast.error(message)
+      setDeleteTarget(null)
+      setError(message)
+    } finally {
+      setDeleting(false)
     }
   }
 
-  useEffect(() => {
-    loadCustomers({
-      page,
-      pageSize,
-      ...(search ? { search } : {}),
-    })
-  }, [page, pageSize, search])
+  async function handleRestoreCustomer(item) {
+    if (!canUpdate || !item?.id) return
+
+    setError('')
+
+    try {
+      await restoreCustomer(item.id)
+      toast.success('Customer restored successfully')
+      await loadCustomers({ page, pageSize, status, ...(search ? { search } : {}) })
+    } catch (apiError) {
+      const message = getApiMessage(apiError, 'Failed to restore customer')
+      toast.error(message)
+      setError(message)
+    }
+  }
 
   return (
     <section className="space-y-3">
@@ -185,10 +229,21 @@ export function CustomersPage() {
             event.preventDefault()
             setPage(1)
             setSearch(draftSearch.trim())
+            setStatus(draftStatus)
           }}
         >
+          <select
+            value={draftStatus}
+            onChange={(event) => setDraftStatus(event.target.value)}
+            className="rounded-sm border border-slate-300 px-2 py-1 text-xs"
+          >
+            {STATUS_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
           <input
-            type="text"
             value={draftSearch}
             onChange={(event) => setDraftSearch(event.target.value)}
             placeholder="Search name, phone, email, address"
@@ -196,19 +251,27 @@ export function CustomersPage() {
           />
           <button
             type="submit"
-            className="rounded-sm bg-green-700 px-3 py-1 text-xs font-semibold text-white hover:bg-green-800"
+            className="rounded-sm border border-slate-300 px-2 py-1 text-xs"
           >
             Apply
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setDraftSearch('')
+              setDraftStatus('active')
+              setSearch('')
+              setStatus('active')
+              setPage(1)
+            }}
+            className="rounded-sm border border-slate-300 px-2 py-1 text-xs"
+          >
+            Clear
           </button>
         </form>
       </header>
 
-      <section className="border border-slate-300 bg-white px-3 py-2 text-xs text-slate-600">
-        <span className="font-semibold text-slate-700">Search:</span> {search || 'None'}
-        <span className="ml-4 font-semibold text-slate-700">Total:</span> {meta.total}
-      </section>
-
-      {(canCreate || (canUpdate && editingId)) && (
+      {canCreate && (
         <section className="border border-slate-300 bg-white p-3">
           <div className="mb-2 flex items-center justify-between">
             <h3 className="text-xs font-semibold text-slate-700">
@@ -267,12 +330,10 @@ export function CustomersPage() {
         </section>
       )}
 
-      {notice && <div className="border border-green-300 bg-green-50 px-3 py-2 text-sm text-green-700">{notice}</div>}
-
       {loading && <div className="border border-slate-300 bg-white px-3 py-2 text-sm">Loading customers...</div>}
       {error && <div className="border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
 
-      {!loading && !error && (
+      {!loading && (
         <section className="border border-slate-300 bg-white p-3">
           <div className="overflow-x-auto">
             <table className="dense-table">
@@ -282,6 +343,7 @@ export function CustomersPage() {
                   <th>Phone</th>
                   <th>Email</th>
                   <th>Address</th>
+                  <th>Status</th>
                   <th>Updated</th>
                   {(canUpdate || canDelete) && <th>Actions</th>}
                 </tr>
@@ -289,7 +351,7 @@ export function CustomersPage() {
               <tbody>
                 {items.length === 0 && (
                   <tr>
-                    <td colSpan={canUpdate || canDelete ? 6 : 5} className="text-center text-slate-500">
+                    <td colSpan={canUpdate || canDelete ? 7 : 6} className="text-center text-slate-500">
                       No customers found
                     </td>
                   </tr>
@@ -300,11 +362,22 @@ export function CustomersPage() {
                     <td>{item.phone || '-'}</td>
                     <td>{item.email || '-'}</td>
                     <td>{item.address || '-'}</td>
+                    <td>
+                      {item.isDeleted ? (
+                        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800">
+                          Archived
+                        </span>
+                      ) : (
+                        <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-medium text-emerald-800">
+                          Active
+                        </span>
+                      )}
+                    </td>
                     <td>{formatDate(item.updatedAt)}</td>
                     {(canUpdate || canDelete) && (
                       <td>
                         <div className="flex items-center gap-2">
-                          {canUpdate && (
+                          {canUpdate && !item.isDeleted && (
                             <button
                               type="button"
                               onClick={() => handleEdit(item)}
@@ -313,13 +386,22 @@ export function CustomersPage() {
                               Edit
                             </button>
                           )}
-                          {canDelete && (
+                          {canDelete && !item.isDeleted && (
                             <button
                               type="button"
-                              onClick={() => handleDelete(item)}
+                              onClick={() => setDeleteTarget(item)}
                               className="rounded-sm border border-red-300 px-2 py-1 text-xs text-red-700"
                             >
-                              Delete
+                              Archive
+                            </button>
+                          )}
+                          {canUpdate && item.isDeleted && (
+                            <button
+                              type="button"
+                              onClick={() => handleRestoreCustomer(item)}
+                              className="rounded-sm border border-emerald-300 px-2 py-1 text-xs text-emerald-700"
+                            >
+                              Restore
                             </button>
                           )}
                         </div>
@@ -354,6 +436,24 @@ export function CustomersPage() {
           </footer>
         </section>
       )}
+
+      <ConfirmDialog
+        open={Boolean(deleteTarget)}
+        onOpenChange={(open) => {
+          if (!open) setDeleteTarget(null)
+        }}
+        title="Archive Customer"
+        description={
+          deleteTarget
+            ? `Archive customer \"${deleteTarget.name}\"?`
+            : 'Archive this customer?'
+        }
+        helperText="This can be reverted later by restoring the archived customer."
+        confirmText="Archive"
+        destructive
+        loading={deleting}
+        onConfirm={handleConfirmDelete}
+      />
     </section>
   )
 }

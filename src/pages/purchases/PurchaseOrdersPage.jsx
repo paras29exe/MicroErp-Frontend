@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { getPurchaseList } from '@/features/purchases/purchases.api'
@@ -20,12 +21,33 @@ function SortIcon({ active, direction }) {
 }
 
 export function PurchaseOrdersPage() {
+  const [searchParams, setSearchParams] = useSearchParams()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [rows, setRows] = useState([])
   const [meta, setMeta] = useState({ page: 1, limit: 20, total: 0, totalPages: 1 })
   const [page, setPage] = useState(1)
   const [sort, setSort] = useState({ field: 'purchaseDate', direction: 'desc' })
+
+  const vendor = (searchParams.get('vendor') || '').trim()
+  const search = (searchParams.get('search') || '').trim()
+
+  useEffect(() => {
+    const parsed = Number.parseInt(searchParams.get('page') || '', 10)
+    if (Number.isInteger(parsed) && parsed > 0) {
+      setPage(parsed)
+    } else {
+      setPage(1)
+    }
+  }, [searchParams])
+
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams)
+    params.set('page', String(page))
+    if (params.toString() !== searchParams.toString()) {
+      setSearchParams(params, { replace: true })
+    }
+  }, [page, searchParams, setSearchParams])
 
   const canGoPrev = page > 1
   const canGoNext = page < meta.totalPages
@@ -43,6 +65,8 @@ export function PurchaseOrdersPage() {
           limit: 20,
           sortBy: sort.field,
           sortOrder: sort.direction,
+          ...(vendor ? { vendorName: vendor } : {}),
+          ...(search ? { search } : {}),
         })
 
         if (cancelled) return
@@ -62,7 +86,7 @@ export function PurchaseOrdersPage() {
     return () => {
       cancelled = true
     }
-  }, [page, sort])
+  }, [page, sort, vendor, search])
 
   function toggleSort(field) {
     setPage(1)
@@ -83,6 +107,11 @@ export function PurchaseOrdersPage() {
           <p className="text-xs text-slate-500">Click Total Amount or Purchase Date to toggle sorting</p>
         </div>
         <div className="text-xs text-slate-600">
+          {vendor && (
+            <span className="mr-4">
+              <span className="font-semibold text-slate-700">Vendor:</span> {vendor}
+            </span>
+          )}
           <span className="font-semibold text-slate-700">Total:</span> {meta.total}
         </div>
       </header>

@@ -29,6 +29,7 @@ export function DashboardPage() {
     setError('')
 
     try {
+      // console.log("api called")
       const data = await getDashboardOverview({ from: nextFrom, to: nextTo })
       setOverview(data)
     } catch (apiError) {
@@ -40,6 +41,7 @@ export function DashboardPage() {
 
   useEffect(() => {
     loadData(from, to)
+    console.log("hello from DashboardPage")
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

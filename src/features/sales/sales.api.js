@@ -42,6 +42,7 @@ export async function getSaleCustomers(search) {
     params: {
       page: 1,
       pageSize: 50,
+      status: 'active',
       ...(search ? { search } : {}),
     },
   })

@@ -8,6 +8,7 @@ import {
   getSaleCustomers,
 } from '@/features/sales/sales.api'
 import { getApiMessage } from '@/lib/api-response'
+import { toast } from 'sonner'
 
 function getStockText(product) {
   if (!product) return ''
@@ -20,6 +21,12 @@ function stockClass(product) {
   if (product.stockStatus === 'out_of_stock') return 'text-red-700'
   if (product.stockStatus === 'low_stock') return 'text-amber-700'
   return 'text-green-700'
+}
+
+function formatPrice(value) {
+  const parsed = Number(value)
+  if (!Number.isFinite(parsed) || parsed < 0) return '-'
+  return parsed.toFixed(2)
 }
 
 export function CreateSalePage() {
@@ -154,7 +161,17 @@ export function CreateSalePage() {
         customerId: Number(customerId),
         items: normalizedItems,
       })
-      navigate('/sales/orders?page=1&limit=20')
+      setCustomerId('')
+      setRows([
+        {
+          productId: '',
+          quantity: 1,
+          unitSellingPrice: '',
+          stockQuantity: 0,
+          stockStatus: 'out_of_stock',
+        },
+      ])
+      toast.success('Sale created successfully')
     } catch (apiError) {
       setError(getApiMessage(apiError, 'Failed to create sale'))
     } finally {
@@ -171,7 +188,7 @@ export function CreateSalePage() {
 
       <form className="space-y-3" onSubmit={handleSubmit}>
         <section className="border border-slate-300 bg-white p-3">
-          <div className="space-y-1">
+          <div className="min-w-0 space-y-1">
             <label className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Customer</label>
             <SearchableSelect
               value={customerId}
@@ -199,8 +216,8 @@ export function CreateSalePage() {
               const selected = products.find((product) => String(product.id) === String(row.productId))
 
               return (
-                <div key={`row-${index}`} className="grid gap-2 border border-slate-200 p-2 md:grid-cols-[2fr_1fr_1fr_auto]">
-                  <div>
+                <div key={`row-${index}`} className="grid gap-2 border border-slate-200 p-2 md:grid-cols-[2fr_1fr_1fr_1fr_auto]">
+                  <div className="min-w-0">
                     <SearchableSelect
                       value={row.productId}
                       onValueChange={(nextValue) => {
@@ -232,6 +249,14 @@ export function CreateSalePage() {
                     onChange={(event) => setRow(index, { quantity: event.target.value })}
                     placeholder="Qty"
                     className="rounded-sm border border-slate-300 px-2 py-1 text-xs"
+                  />
+
+                  <input
+                    type="text"
+                    readOnly
+                    value={selected ? formatPrice(selected.unitPrice) : ''}
+                    placeholder="Unit price (read-only)"
+                    className="rounded-sm border border-slate-300 bg-slate-100 px-2 py-1 text-xs text-slate-700"
                   />
 
                   <input

@@ -2,12 +2,14 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { ConfirmDialog } from '@/components/common/confirm-dialog'
 import { SalesFilterDialog } from '@/components/sales/SalesFilterDialog'
 import { deleteSale, getSalesList } from '@/features/sales/sales.api'
 import { getApiMessage } from '@/lib/api-response'
 import { formatDateDDMMYYYY } from '@/lib/date-format'
 import { hasPermission } from '@/lib/permissions'
 import { useAuthStore } from '@/features/auth/auth.store'
+import { toast } from 'sonner'
 
 function parsePositiveInt(value, fallback) {
   const parsed = Number.parseInt(value || '', 10)
@@ -47,7 +49,8 @@ export function SalesOrdersPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [notice, setNotice] = useState('')
+  const [deleteTarget, setDeleteTarget] = useState(null)
+  const [deleting, setDeleting] = useState(false)
   const [rows, setRows] = useState([])
   const [meta, setMeta] = useState({ page: 1, limit: 20, total: 0, totalPages: 1 })
   const [filtersOpen, setFiltersOpen] = useState(false)
@@ -115,19 +118,23 @@ export function SalesOrdersPage() {
     setSearchParams(params)
   }
 
-  async function handleDelete(row) {
-    if (!canDelete) return
-    if (!window.confirm(`Delete sale #${row.id}? Stock will be restored.`)) return
+  async function handleConfirmDelete() {
+    if (!canDelete || !deleteTarget) return
 
+    setDeleting(true)
     setError('')
-    setNotice('')
-
     try {
-      await deleteSale(row.id)
-      setNotice(`Sale #${row.id} deleted and inventory restored`)
+      await deleteSale(deleteTarget.id)
+      toast.success(`Sale #${deleteTarget.id} deleted and inventory restored`)
+      setDeleteTarget(null)
       await loadData()
     } catch (apiError) {
-      setError(getApiMessage(apiError, 'Failed to delete sale'))
+      const message = getApiMessage(apiError, 'Failed to delete sale')
+      setError(message)
+      toast.error(message)
+      setDeleteTarget(null)
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -158,7 +165,6 @@ export function SalesOrdersPage() {
         <span className="ml-4 font-semibold text-slate-700">Total:</span> {meta.total}
       </section>
 
-      {notice && <div className="border border-green-300 bg-green-50 px-3 py-2 text-sm text-green-700">{notice}</div>}
       {loading && <div className="border border-slate-300 bg-white px-3 py-2 text-sm">Loading sales...</div>}
       {error && <div className="border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
 
@@ -233,7 +239,7 @@ export function SalesOrdersPage() {
                             variant="outline"
                             size="sm"
                             className="border-red-300 text-red-700"
-                            onClick={() => handleDelete(row)}
+                            onClick={() => setDeleteTarget(row)}
                           >
                             Delete
                           </Button>
@@ -291,6 +297,23 @@ export function SalesOrdersPage() {
             },
           })
         }}
+      />
+
+      <ConfirmDialog
+        open={Boolean(deleteTarget)}
+        onOpenChange={(open) => {
+          if (!open) setDeleteTarget(null)
+        }}
+        title="Delete Sale"
+        description={
+          deleteTarget
+            ? `Delete sale #${deleteTarget.id}? Stock will be restored automatically.`
+            : 'Delete this sale?'
+        }
+        confirmText="Delete"
+        destructive
+        loading={deleting}
+        onConfirm={handleConfirmDelete}
       />
     </section>
   )

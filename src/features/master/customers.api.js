@@ -45,3 +45,8 @@ export async function deleteCustomer(id) {
   const response = await api.delete(`/customers/delete-customer/${id}`)
   return getApiData(response)
 }
+
+export async function restoreCustomer(id) {
+  const response = await api.patch(`/customers/restore-customer/${id}`)
+  return getApiData(response)
+}

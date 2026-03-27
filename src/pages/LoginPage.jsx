@@ -5,6 +5,8 @@ import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { login } from '@/features/auth/auth.api'
 import { useAuthStore } from '@/features/auth/auth.store'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { getApiMessage } from '@/lib/api-response'
 import loginOfficeImage from '@/assets/login-office.svg'
 
@@ -17,6 +19,7 @@ export function LoginPage() {
   const navigate = useNavigate()
   const setUser = useAuthStore((state) => state.setUser)
   const [errorMessage, setErrorMessage] = useState('')
+  const trustSignals = ['Role-based access control', 'Encrypted session management', 'Real-time operational sync']
 
   const {
     register,
@@ -53,76 +56,106 @@ export function LoginPage() {
   }
 
   return (
-    <div className="erp-desktop-min flex min-h-screen items-center justify-center bg-slate-100 px-8 py-10">
-      <section className="grid w-full max-w-6xl grid-cols-[1.25fr_1fr] overflow-hidden rounded-sm border border-slate-300 bg-white shadow-sm">
-        <div className="relative border-r border-slate-300 bg-slate-900">
+    <div className="erp-desktop-min relative min-h-screen overflow-hidden bg-slate-100">
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute -top-20 left-10 h-72 w-72 rounded-full bg-blue-200/40 blur-3xl" />
+        <div className="absolute right-8 bottom-0 h-64 w-64 rounded-full bg-green-200/40 blur-3xl" />
+      </div>
+
+      <section className="relative grid min-h-screen grid-cols-1 md:grid-cols-[1.25fr_1fr]">
+        <div className="relative hidden border-r border-slate-300/80 md:block">
           <img
             src={loginOfficeImage}
             alt="Operations dashboard illustration"
             className="h-full w-full object-cover"
           />
-          <div className="absolute inset-x-0 bottom-0 border-t border-blue-300/30 bg-slate-950/75 px-8 py-6">
-            <div className="mb-2 text-xs font-semibold tracking-widest text-blue-200 uppercase">
-              MicroERP
+          <div className="absolute inset-0 bg-linear-to-b from-slate-900/10 via-slate-900/25 to-slate-900/80" />
+          <div className="absolute inset-x-0 bottom-0 px-10 py-10">
+            <div className="mb-4 inline-flex items-center rounded-sm border border-blue-200/80 bg-blue-50/90 px-3 py-1 text-[11px] font-semibold tracking-wide text-blue-700 uppercase">
+              MicroERP Operations
             </div>
-            <h1 className="text-2xl font-semibold leading-tight text-white">
-              Business Operations Workspace
+            <h1 className="max-w-md text-3xl font-semibold leading-tight text-white">
+              Unified workspace for finance, inventory, and sales operations
             </h1>
-            <p className="mt-2 text-sm leading-6 text-slate-200">
-              Sign in to continue with daily transactions and management workflows.
+            <p className="mt-3 max-w-lg text-sm leading-6 text-slate-100/95">
+              Keep your team aligned with one operational source of truth across purchasing, production, and billing workflows.
             </p>
+
+            <div className="mt-7 grid gap-2">
+              {trustSignals.map((signal) => (
+                <div
+                  key={signal}
+                  className="inline-flex w-fit items-center rounded-sm border border-slate-300/90 bg-white/90 px-3 py-1.5 text-xs text-slate-700 shadow-sm"
+                >
+                  <span className="mr-2 inline-block h-1.5 w-1.5 rounded-full bg-green-600" />
+                  {signal}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
-        <div className="px-10 py-12">
-          <h2 className="mb-1 text-2xl font-semibold text-slate-900">Sign in</h2>
-          <p className="mb-8 text-sm text-slate-600">Enter your credentials to access your account.</p>
-
-          <form className="space-y-5" onSubmit={handleSubmit(onSubmit)}>
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-slate-700" htmlFor="identifier">
-                Email or Employee ID
-              </label>
-              <input
-                id="identifier"
-                type="text"
-                className="w-full rounded-sm border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-blue-600"
-                {...register('identifier')}
-              />
-              {errors.identifier && (
-                <p className="text-xs text-red-700">{errors.identifier.message}</p>
-              )}
+        <div className="flex items-center bg-white/95 px-5 py-8 sm:px-8 md:px-12">
+          <div className="mx-auto w-full max-w-md">
+            <div className="mb-8 border-b border-slate-200 pb-5">
+              <h2 className="mb-1 text-2xl font-semibold text-slate-900">Sign in</h2>
+              <p className="text-sm text-slate-600">Enter your credentials to continue to your workspace.</p>
             </div>
 
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-slate-700" htmlFor="password">
-                Password
-              </label>
-              <input
-                id="password"
-                type="password"
-                className="w-full rounded-sm border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-blue-600"
-                {...register('password')}
-              />
-              {errors.password && (
-                <p className="text-xs text-red-700">{errors.password.message}</p>
-              )}
+            <div className="mb-6 rounded-sm border border-green-200 bg-green-50 px-3 py-2 text-xs text-green-800">
+              Secure login with role-based access enabled.
             </div>
 
-            {errorMessage && (
-              <div className="rounded-sm border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800">
-                {errorMessage}
+            <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-slate-700" htmlFor="identifier">
+                  Email or Employee ID
+                </label>
+                <Input
+                  id="identifier"
+                  type="text"
+                  className="h-10 rounded-sm border-slate-300 bg-white"
+                  {...register('identifier')}
+                />
+                {errors.identifier && (
+                  <p className="text-xs text-red-700">{errors.identifier.message}</p>
+                )}
               </div>
-            )}
 
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full rounded-sm bg-blue-700 px-3 py-2.5 text-sm font-semibold text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {isSubmitting ? 'Signing in...' : 'Sign in'}
-            </button>
-          </form>
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-slate-700" htmlFor="password">
+                  Password
+                </label>
+                <Input
+                  id="password"
+                  type="password"
+                  className="h-10 rounded-sm border-slate-300 bg-white"
+                  {...register('password')}
+                />
+                {errors.password && (
+                  <p className="text-xs text-red-700">{errors.password.message}</p>
+                )}
+              </div>
+
+              {errorMessage && (
+                <div className="rounded-sm border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800">
+                  {errorMessage}
+                </div>
+              )}
+
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                className="h-10 w-full rounded-sm bg-blue-700 text-sm font-semibold text-white hover:bg-blue-800"
+              >
+                {isSubmitting ? 'Signing in...' : 'Sign in'}
+              </Button>
+
+              <p className="pt-1 text-center text-xs text-slate-500">
+                Authorized access only. All activity is logged for audit compliance.
+              </p>
+            </form>
+          </div>
         </div>
       </section>
     </div>
