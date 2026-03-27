@@ -112,6 +112,16 @@ const NAV_SECTIONS = [
             },
           },
           {
+            title: 'Purchase Reports',
+            href: '/purchases/reports',
+            permission: 'purchase:read',
+            icon: BarChart3,
+            api: {
+              module: '/api/purchases',
+              endpoints: ['/get-purchases'],
+            },
+          },
+          {
             title: 'Payment Status Updates',
             href: '/purchases/payments',
             permission: 'purchase:update',
@@ -155,6 +165,16 @@ const NAV_SECTIONS = [
             api: {
               module: '/api/production',
               endpoints: ['/upsert-bom', '/get-bom/:productId'],
+            },
+          },
+          {
+            title: 'Create BOM',
+            href: '/production/bom/create',
+            permission: 'production:create',
+            icon: Plus,
+            api: {
+              module: '/api/production',
+              endpoints: ['/upsert-bom'],
             },
           },
         ],

@@ -25,6 +25,17 @@ import { SalesReportsPage } from '@/pages/sales/SalesReportsPage'
 import { KpiSnapshotPage } from '@/pages/KpiSnapshotPage'
 import { OperationalAlertsPage } from '@/pages/OperationalAlertsPage'
 import { PurchaseOrdersPage } from '@/pages/purchases/PurchaseOrdersPage'
+import { CreatePurchasePage } from '@/pages/purchases/CreatePurchasePage'
+import { PurchaseDetailsPage } from '@/pages/purchases/PurchaseDetailsPage'
+import { PurchaseReportsPage } from '@/pages/purchases/PurchaseReportsPage'
+import { InventoryStockPage } from '@/pages/inventory/InventoryStockPage'
+import { InventoryLowStockPage } from '@/pages/inventory/InventoryLowStockPage'
+import { InventorySummaryPage } from '@/pages/inventory/InventorySummaryPage'
+import { InventoryAdjustmentsPage } from '@/pages/inventory/InventoryAdjustmentsPage'
+import { ProductionRegisterPage } from '@/pages/production/ProductionRegisterPage'
+import { RecordProductionPage } from '@/pages/production/RecordProductionPage'
+import { BomManagerPage } from '@/pages/production/BomManagerPage'
+import { CreateBomPage } from '@/pages/production/CreateBomPage'
 
 function SessionBootstrap() {
   const setBootstrapping = useAuthStore((state) => state.setBootstrapping)
@@ -120,7 +131,23 @@ export function AppRouter() {
               path="/purchases/new"
               element={
                 <PermissionRoute permission="purchase:create">
-                  <ModulePlaceholderPage title="Record New Purchase" />
+                  <CreatePurchasePage />
+                </PermissionRoute>
+              }
+            />
+            <Route
+              path="/purchases/:id"
+              element={
+                <PermissionRoute permission="purchase:read">
+                  <PurchaseDetailsPage />
+                </PermissionRoute>
+              }
+            />
+            <Route
+              path="/purchases/reports"
+              element={
+                <PermissionRoute permission="purchase:read">
+                  <PurchaseReportsPage />
                 </PermissionRoute>
               }
             />
@@ -128,7 +155,7 @@ export function AppRouter() {
               path="/purchases/payments"
               element={
                 <PermissionRoute permission="purchase:update">
-                  <ModulePlaceholderPage title="Payment Status Updates" />
+                  <PurchaseOrdersPage />
                 </PermissionRoute>
               }
             />
@@ -136,7 +163,7 @@ export function AppRouter() {
               path="/inventory/stock"
               element={
                 <PermissionRoute permission="inventory:read">
-                  <ModulePlaceholderPage title="Stock Ledger" />
+                  <InventoryStockPage />
                 </PermissionRoute>
               }
             />
@@ -144,7 +171,7 @@ export function AppRouter() {
               path="/inventory/low-stock"
               element={
                 <PermissionRoute permission="inventory:read">
-                  <ModulePlaceholderPage title="Low Stock" />
+                  <InventoryLowStockPage />
                 </PermissionRoute>
               }
             />
@@ -152,7 +179,7 @@ export function AppRouter() {
               path="/inventory/summary"
               element={
                 <PermissionRoute permission="inventory:read">
-                  <ModulePlaceholderPage title="Inventory Summary" />
+                  <InventorySummaryPage />
                 </PermissionRoute>
               }
             />
@@ -160,7 +187,7 @@ export function AppRouter() {
               path="/inventory/adjustments"
               element={
                 <PermissionRoute permission="inventory:update">
-                  <ModulePlaceholderPage title="Stock Adjustments" />
+                  <InventoryAdjustmentsPage />
                 </PermissionRoute>
               }
             />
@@ -168,7 +195,7 @@ export function AppRouter() {
               path="/production/runs"
               element={
                 <PermissionRoute permission="production:read">
-                  <ModulePlaceholderPage title="Production Register" />
+                  <ProductionRegisterPage />
                 </PermissionRoute>
               }
             />
@@ -176,7 +203,7 @@ export function AppRouter() {
               path="/production/new"
               element={
                 <PermissionRoute permission="production:create">
-                  <ModulePlaceholderPage title="Record Production" />
+                  <RecordProductionPage />
                 </PermissionRoute>
               }
             />
@@ -184,7 +211,15 @@ export function AppRouter() {
               path="/production/bom"
               element={
                 <PermissionRoute permission="production:read">
-                  <ModulePlaceholderPage title="BOM Manager" />
+                  <BomManagerPage />
+                </PermissionRoute>
+              }
+            />
+            <Route
+              path="/production/bom/create"
+              element={
+                <PermissionRoute permission="production:create">
+                  <CreateBomPage />
                 </PermissionRoute>
               }
             />

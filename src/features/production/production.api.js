@@ -1,8 +1,8 @@
 import { api } from '@/lib/api-client'
 import { getApiData } from '@/lib/api-response'
 
-function normalizePurchaseList(data) {
-  const rows = data?.purchases || []
+function normalizeProductionList(data) {
+  const rows = data?.productions || []
   const meta = data?.meta || {}
 
   return {
@@ -16,38 +16,39 @@ function normalizePurchaseList(data) {
   }
 }
 
-export async function getPurchaseList(params) {
-  const response = await api.get('/purchases/get-purchases', { params })
+export async function getProductionList(params) {
+  const response = await api.get('/production/get-productions', { params })
   const data = getApiData(response)
-  return normalizePurchaseList(data)
+  return normalizeProductionList(data)
 }
 
-export async function getPurchaseById(id) {
-  const response = await api.get(`/purchases/get-purchase/${id}`)
+export async function getProductionById(id) {
+  const response = await api.get(`/production/get-production/${id}`)
   return getApiData(response)
 }
 
-export async function createPurchase(payload) {
-  const response = await api.post('/purchases/add-purchase', payload)
+export async function recordProduction(payload) {
+  const response = await api.post('/production/record-production', payload)
   return getApiData(response)
 }
 
-export async function deletePurchase(id) {
-  const response = await api.delete(`/purchases/delete-purchase/${id}`)
+export async function upsertBom(payload) {
+  const response = await api.post('/production/upsert-bom', payload)
   return getApiData(response)
 }
 
-export async function updatePurchasePaymentStatus(id, paymentStatus) {
-  const response = await api.put(`/purchases/update-payment-status/${id}`, { paymentStatus })
+export async function getBomByProductId(productId) {
+  const response = await api.get(`/production/get-bom/${productId}`)
   return getApiData(response)
 }
 
-export async function getPurchaseVendors(search) {
-  const response = await api.get('/vendors/get-vendors', {
+export async function getFinishedProducts(search) {
+  const response = await api.get('/products/get-products', {
     params: {
       page: 1,
-      pageSize: 50,
+      pageSize: 100,
       status: 'active',
+      category: 'finished',
       ...(search ? { search } : {}),
     },
   })
@@ -57,11 +58,11 @@ export async function getPurchaseVendors(search) {
   return data?.items || []
 }
 
-export async function getPurchaseProducts(search) {
+export async function getRawMaterialProducts(search) {
   const response = await api.get('/products/get-products', {
     params: {
       page: 1,
-      pageSize: 50,
+      pageSize: 100,
       status: 'active',
       category: 'raw',
       ...(search ? { search } : {}),
