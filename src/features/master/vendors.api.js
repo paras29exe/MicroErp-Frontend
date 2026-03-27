@@ -45,3 +45,8 @@ export async function deleteVendor(id) {
   const response = await api.delete(`/vendors/delete-vendor/${id}`)
   return getApiData(response)
 }
+
+export async function restoreVendor(id) {
+  const response = await api.patch(`/vendors/restore-vendor/${id}`)
+  return getApiData(response)
+}

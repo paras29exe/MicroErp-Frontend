@@ -12,18 +12,17 @@ import {
 import { Select } from '@/components/ui/select'
 
 const DEFAULT_FILTERS = {
-  saleId: '',
-  customer: '',
+  purchaseId: '',
+  vendor: '',
   productName: '',
-  productId: '',
-  minAmount: '',
-  maxAmount: '',
-  profit: '',
+  paymentStatus: '',
   startDate: '',
   endDate: '',
+  minAmount: '',
+  maxAmount: '',
 }
 
-export function SalesFilterDialog({ open, onOpenChange, value, onApply, onReset }) {
+export function PurchaseFilterDialog({ open, onOpenChange, value, onApply, onReset }) {
   const [draft, setDraft] = useState(DEFAULT_FILTERS)
 
   useEffect(() => {
@@ -35,8 +34,8 @@ export function SalesFilterDialog({ open, onOpenChange, value, onApply, onReset 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Advanced Sales Filters</DialogTitle>
-          <DialogDescription>Apply detailed backend filters for orders list.</DialogDescription>
+          <DialogTitle>Advanced Purchase Filters</DialogTitle>
+          <DialogDescription>Apply detailed backend filters for purchase orders list.</DialogDescription>
         </DialogHeader>
 
         <DialogBody>
@@ -44,16 +43,16 @@ export function SalesFilterDialog({ open, onOpenChange, value, onApply, onReset 
             <input
               type="number"
               min="1"
-              value={draft.saleId}
-              onChange={(event) => setDraft((prev) => ({ ...prev, saleId: event.target.value }))}
-              placeholder="Sale ID"
+              value={draft.purchaseId}
+              onChange={(event) => setDraft((prev) => ({ ...prev, purchaseId: event.target.value }))}
+              placeholder="Purchase ID"
               className="rounded-sm border border-slate-300 px-2 py-1 text-xs"
             />
             <input
               type="text"
-              value={draft.customer}
-              onChange={(event) => setDraft((prev) => ({ ...prev, customer: event.target.value }))}
-              placeholder="Customer (name or phone)"
+              value={draft.vendor}
+              onChange={(event) => setDraft((prev) => ({ ...prev, vendor: event.target.value }))}
+              placeholder="Vendor (name or phone)"
               className="rounded-sm border border-slate-300 px-2 py-1 text-xs"
             />
             <input
@@ -63,14 +62,14 @@ export function SalesFilterDialog({ open, onOpenChange, value, onApply, onReset 
               placeholder="Product name"
               className="rounded-sm border border-slate-300 px-2 py-1 text-xs"
             />
-            <input
-              type="number"
-              min="1"
-              value={draft.productId}
-              onChange={(event) => setDraft((prev) => ({ ...prev, productId: event.target.value }))}
-              placeholder="Product ID"
-              className="rounded-sm border border-slate-300 px-2 py-1 text-xs"
-            />
+            <Select
+              value={draft.paymentStatus}
+              onChange={(event) => setDraft((prev) => ({ ...prev, paymentStatus: event.target.value }))}
+            >
+              <option value="">Payment Status (Any)</option>
+              <option value="pending">Pending</option>
+              <option value="paid">Paid</option>
+            </Select>
             <div className="space-y-1">
               <label className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Amount Min</label>
               <input
@@ -95,14 +94,6 @@ export function SalesFilterDialog({ open, onOpenChange, value, onApply, onReset 
                 className="w-full rounded-sm border border-slate-300 px-2 py-1 text-xs"
               />
             </div>
-            <Select
-              value={draft.profit}
-              onChange={(event) => setDraft((prev) => ({ ...prev, profit: event.target.value }))}
-            >
-              <option value="">Profit (Any)</option>
-              <option value="positive">Positive</option>
-              <option value="negative">Negative</option>
-            </Select>
             <div className="grid gap-2 md:col-span-2 md:grid-cols-2">
               <div className="space-y-1">
                 <label className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Range From</label>

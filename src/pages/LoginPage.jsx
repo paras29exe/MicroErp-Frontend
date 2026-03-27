@@ -5,8 +5,9 @@ import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { login } from '@/features/auth/auth.api'
 import { useAuthStore } from '@/features/auth/auth.store'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { getApiMessage } from '@/lib/api-response'
-import loginOfficeImage from '@/assets/login-office.svg'
 
 const loginSchema = z.object({
   identifier: z.string().min(1, 'Email or employee ID is required'),
@@ -53,40 +54,28 @@ export function LoginPage() {
   }
 
   return (
-    <div className="erp-desktop-min flex min-h-screen items-center justify-center bg-slate-100 px-8 py-10">
-      <section className="grid w-full max-w-6xl grid-cols-[1.25fr_1fr] overflow-hidden rounded-sm border border-slate-300 bg-white shadow-sm">
-        <div className="relative border-r border-slate-300 bg-slate-900">
-          <img
-            src={loginOfficeImage}
-            alt="Operations dashboard illustration"
-            className="h-full w-full object-cover"
-          />
-          <div className="absolute inset-x-0 bottom-0 border-t border-blue-300/30 bg-slate-950/75 px-8 py-6">
-            <div className="mb-2 text-xs font-semibold tracking-widest text-blue-200 uppercase">
-              MicroERP
-            </div>
-            <h1 className="text-2xl font-semibold leading-tight text-white">
-              Business Operations Workspace
-            </h1>
-            <p className="mt-2 text-sm leading-6 text-slate-200">
-              Sign in to continue with daily transactions and management workflows.
-            </p>
+    <div className="erp-desktop-min min-h-screen bg-slate-100 px-5 py-10 sm:px-8 sm:py-14">
+      <div className="mx-auto flex min-h-[calc(100vh-5rem)] w-full max-w-5xl items-center justify-center">
+        <section className="w-full max-w-md rounded-xl border border-slate-200 bg-white p-7 shadow-[0_20px_50px_-30px_rgba(15,23,42,0.55)] sm:p-8">
+          <div className="mb-7 border-b border-slate-200 pb-5">
+            <p className="text-xs font-semibold tracking-[0.12em] text-slate-500 uppercase">MicroERP</p>
+            <h1 className="mt-2 text-2xl font-semibold text-slate-900">Sign in to your workspace</h1>
+            <p className="mt-1 text-sm text-slate-600">Use your email or employee ID credentials to continue.</p>
           </div>
-        </div>
 
-        <div className="px-10 py-12">
-          <h2 className="mb-1 text-2xl font-semibold text-slate-900">Sign in</h2>
-          <p className="mb-8 text-sm text-slate-600">Enter your credentials to access your account.</p>
+          <div className="mb-6 rounded-sm border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-800">
+            Secure access with role-based permissions.
+          </div>
 
-          <form className="space-y-5" onSubmit={handleSubmit(onSubmit)}>
+          <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
             <div className="space-y-2">
               <label className="block text-sm font-medium text-slate-700" htmlFor="identifier">
                 Email or Employee ID
               </label>
-              <input
+              <Input
                 id="identifier"
                 type="text"
-                className="w-full rounded-sm border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-blue-600"
+                className="h-10 rounded-sm border-slate-300 bg-white"
                 {...register('identifier')}
               />
               {errors.identifier && (
@@ -98,10 +87,10 @@ export function LoginPage() {
               <label className="block text-sm font-medium text-slate-700" htmlFor="password">
                 Password
               </label>
-              <input
+              <Input
                 id="password"
                 type="password"
-                className="w-full rounded-sm border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-blue-600"
+                className="h-10 rounded-sm border-slate-300 bg-white"
                 {...register('password')}
               />
               {errors.password && (
@@ -115,16 +104,20 @@ export function LoginPage() {
               </div>
             )}
 
-            <button
+            <Button
               type="submit"
               disabled={isSubmitting}
-              className="w-full rounded-sm bg-blue-700 px-3 py-2.5 text-sm font-semibold text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
+              className="h-10 w-full rounded-sm bg-blue-700 text-sm font-semibold text-white hover:bg-blue-800"
             >
               {isSubmitting ? 'Signing in...' : 'Sign in'}
-            </button>
+            </Button>
+
+            <p className="pt-1 text-center text-xs text-slate-500">
+              Authorized access only. All activity is logged for audit compliance.
+            </p>
           </form>
-        </div>
-      </section>
+        </section>
+      </div>
     </div>
   )
 }

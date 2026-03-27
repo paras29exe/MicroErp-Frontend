@@ -45,3 +45,8 @@ export async function deleteProduct(id) {
   const response = await api.delete(`/products/delete-product/${id}`)
   return getApiData(response)
 }
+
+export async function restoreProduct(id) {
+  const response = await api.patch(`/products/restore-product/${id}`)
+  return getApiData(response)
+}

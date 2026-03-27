@@ -12,6 +12,7 @@ export function SearchableSelect({
   loading = false,
   loadingText = 'Loading options...',
   onSearchChange,
+  className = '',
 }) {
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
@@ -40,15 +41,15 @@ export function SearchableSelect({
   }, [])
 
   return (
-    <div ref={rootRef} className="relative">
+    <div ref={rootRef} className={`relative w-full min-w-0 ${className}`.trim()}>
       <Button
         type="button"
         variant="outline"
-        className="w-full justify-between rounded-sm border-slate-300 px-2 py-1 text-xs"
+        className="w-full min-w-0 justify-between overflow-hidden rounded-sm border-slate-300 px-2 py-1 text-xs"
         onClick={() => setOpen((prev) => !prev)}
       >
-        <span className="truncate text-left">{selected?.label || placeholder}</span>
-        <span className="text-slate-400">v</span>
+        <span className="block flex-1 truncate text-left">{selected?.label || placeholder}</span>
+        <span className="ml-2 shrink-0 text-slate-400">v</span>
       </Button>
 
       {open && (

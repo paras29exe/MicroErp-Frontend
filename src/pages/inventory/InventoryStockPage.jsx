@@ -2,37 +2,24 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { ConfirmDialog } from '@/components/common/confirm-dialog'
-import { SalesFilterDialog } from '@/components/sales/SalesFilterDialog'
-import { deleteSale, getSalesList } from '@/features/sales/sales.api'
+import { InventoryFilterDialog } from '@/components/inventory/InventoryFilterDialog'
+import { getInventoryList } from '@/features/inventory/inventory.api'
+import { useAuthStore } from '@/features/auth/auth.store'
 import { getApiMessage } from '@/lib/api-response'
 import { formatDateDDMMYYYY } from '@/lib/date-format'
 import { hasPermission } from '@/lib/permissions'
-import { useAuthStore } from '@/features/auth/auth.store'
-import { toast } from 'sonner'
 
 function parsePositiveInt(value, fallback) {
   const parsed = Number.parseInt(value || '', 10)
   return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback
 }
 
-function formatAmount(value) {
-  return Number(value || 0).toFixed(2)
-}
-
-function formatDate(value) {
-  return formatDateDDMMYYYY(value)
-}
-
 function getFiltersFromSearchParams(searchParams) {
   return {
-    saleId: searchParams.get('saleId') || searchParams.get('search') || '',
-    customer: searchParams.get('customer') || '',
-    productName: searchParams.get('productName') || '',
-    productId: searchParams.get('productId') || '',
-    minAmount: searchParams.get('minAmount') || '',
-    maxAmount: searchParams.get('maxAmount') || '',
-    profit: searchParams.get('profit') || '',
+    search: searchParams.get('search') || '',
+    category: searchParams.get('category') || '',
+    stockStatus: searchParams.get('stockStatus') || '',
+    lowStock: searchParams.get('lowStock') || '',
     startDate: searchParams.get('startDate') || '',
     endDate: searchParams.get('endDate') || '',
   }
@@ -44,23 +31,32 @@ function SortIcon({ active, direction }) {
   return <ArrowDown className="h-3.5 w-3.5 text-slate-700" />
 }
 
-export function SalesOrdersPage() {
+function formatCategory(category) {
+  if (!category) return '-'
+  return category.toUpperCase()
+}
+
+function getStockClass(row) {
+  if (row.stockQuantity === 0) return 'text-red-700'
+  if (row.stockQuantity <= row.reorderLevel) return 'text-amber-700'
+  return 'text-green-700'
+}
+
+export function InventoryStockPage() {
   const user = useAuthStore((state) => state.user)
-  const canDelete = hasPermission(user?.role, 'sales:delete')
+  const canUpdate = hasPermission(user?.role, 'inventory:update')
 
   const [searchParams, setSearchParams] = useSearchParams()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [deleteTarget, setDeleteTarget] = useState(null)
-  const [deleting, setDeleting] = useState(false)
   const [rows, setRows] = useState([])
   const [meta, setMeta] = useState({ page: 1, limit: 20, total: 0, totalPages: 1 })
   const [filtersOpen, setFiltersOpen] = useState(false)
 
   const page = parsePositiveInt(searchParams.get('page'), 1)
   const limit = parsePositiveInt(searchParams.get('limit'), 20)
-  const sortBy = searchParams.get('sortBy') || 'saleDate'
-  const sortOrder = searchParams.get('sortOrder') === 'asc' ? 'asc' : 'desc'
+  const sortBy = searchParams.get('sortBy') || 'productName'
+  const sortOrder = searchParams.get('sortOrder') === 'desc' ? 'desc' : 'asc'
   const filters = useMemo(() => getFiltersFromSearchParams(searchParams), [searchParams])
 
   const canGoPrev = page > 1
@@ -71,26 +67,23 @@ export function SalesOrdersPage() {
     setError('')
 
     try {
-      const data = await getSalesList({
+      const data = await getInventoryList({
         page,
         limit,
-        ...(filters.saleId ? { search: filters.saleId } : {}),
-        ...(filters.customer ? { customerName: filters.customer, customerPhone: filters.customer } : {}),
-        ...(filters.productName ? { productName: filters.productName } : {}),
-        ...(filters.productId ? { productId: filters.productId } : {}),
-        ...(filters.minAmount ? { minAmount: filters.minAmount } : {}),
-        ...(filters.maxAmount ? { maxAmount: filters.maxAmount } : {}),
-        ...(filters.profit ? { profit: filters.profit } : {}),
-        ...(filters.startDate ? { startDate: filters.startDate } : {}),
-        ...(filters.endDate ? { endDate: filters.endDate } : {}),
         sortBy,
         sortOrder,
+        ...(filters.search ? { search: filters.search } : {}),
+        ...(filters.category ? { category: filters.category } : {}),
+        ...(filters.stockStatus ? { stockStatus: filters.stockStatus } : {}),
+        ...(filters.lowStock ? { lowStock: filters.lowStock } : {}),
+        ...(filters.startDate ? { startDate: filters.startDate } : {}),
+        ...(filters.endDate ? { endDate: filters.endDate } : {}),
       })
 
       setRows(data.items)
       setMeta(data.meta)
     } catch (apiError) {
-      setError(getApiMessage(apiError, 'Failed to load sales orders'))
+      setError(getApiMessage(apiError, 'Failed to load inventory stock'))
     } finally {
       setLoading(false)
     }
@@ -107,6 +100,7 @@ export function SalesOrdersPage() {
     const nextLimit = nextState.limit ?? limit
     const nextSortBy = nextState.sortBy ?? sortBy
     const nextSortOrder = nextState.sortOrder ?? sortOrder
+
     params.set('page', String(nextPage))
     params.set('limit', String(nextLimit))
     params.set('sortBy', nextSortBy)
@@ -122,26 +116,6 @@ export function SalesOrdersPage() {
     setSearchParams(params)
   }
 
-  async function handleConfirmDelete() {
-    if (!canDelete || !deleteTarget) return
-
-    setDeleting(true)
-    setError('')
-    try {
-      await deleteSale(deleteTarget.id)
-      toast.success(`Sale #${deleteTarget.id} deleted and inventory restored`)
-      setDeleteTarget(null)
-      await loadData()
-    } catch (apiError) {
-      const message = getApiMessage(apiError, 'Failed to delete sale')
-      setError(message)
-      toast.error(message)
-      setDeleteTarget(null)
-    } finally {
-      setDeleting(false)
-    }
-  }
-
   function toggleSort(field) {
     const nextOrder = sortBy === field && sortOrder === 'desc' ? 'asc' : 'desc'
     updateQuery({ page: 1, sortBy: field, sortOrder: nextOrder })
@@ -151,26 +125,29 @@ export function SalesOrdersPage() {
     <section className="space-y-3">
       <header className="flex flex-wrap items-center justify-between gap-2 border border-slate-300 bg-white px-3 py-2">
         <div>
-          <h2 className="text-sm font-semibold text-blue-700">Sales Orders</h2>
-          <p className="text-xs text-slate-500">View and delete sales orders. No edit flow.</p>
+          <h2 className="text-sm font-semibold text-blue-700">Stock Ledger</h2>
+          <p className="text-xs text-slate-500">Monitor stock levels and reorder thresholds.</p>
         </div>
         <div className="flex items-center gap-2 text-xs text-slate-600">
           <span className="mr-2 font-semibold text-slate-700">Total: {meta.total}</span>
-          <Button type="button" variant="outline" onClick={() => setFiltersOpen(true)}>
+          <Button type="button" variant="outline" size="sm" onClick={() => setFiltersOpen(true)}>
             Filters
           </Button>
-          <Button render={<Link to="/sales/new" />} className="bg-green-700 text-white hover:bg-green-800">
-            Record New Sale
-          </Button>
+          {canUpdate && (
+            <Button render={<Link to="/inventory/adjustments" />} type="button" size="sm" className="bg-green-700 text-white hover:bg-green-800">
+              Adjust Stock
+            </Button>
+          )}
         </div>
       </header>
 
       <section className="border border-slate-300 bg-white px-3 py-2 text-xs text-slate-600">
-        <span className="font-semibold text-slate-700">Sale ID:</span> {filters.saleId || 'Any'}
-        <span className="ml-4 font-semibold text-slate-700">Total:</span> {meta.total}
+        <span className="font-semibold text-slate-700">Search:</span> {filters.search || 'None'}
+        <span className="ml-4 font-semibold text-slate-700">Category:</span> {filters.category || 'Any'}
+        <span className="ml-4 font-semibold text-slate-700">Status:</span> {filters.stockStatus || 'Any'}
       </section>
 
-      {loading && <div className="border border-slate-300 bg-white px-3 py-2 text-sm">Loading sales...</div>}
+      {loading && <div className="border border-slate-300 bg-white px-3 py-2 text-sm">Loading inventory...</div>}
       {error && <div className="border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
 
       {!loading && !error && (
@@ -179,77 +156,76 @@ export function SalesOrdersPage() {
             <table className="dense-table">
               <thead>
                 <tr>
-                  <th>Sale ID</th>
-                  <th>Customer</th>
                   <th>
                     <button
                       type="button"
                       className="inline-flex items-center gap-1"
-                      onClick={() => toggleSort('saleDate')}
+                      onClick={() => toggleSort('productName')}
                     >
-                      <span>Sale Date</span>
-                      <SortIcon active={sortBy === 'saleDate'} direction={sortOrder} />
+                      <span>Product</span>
+                      <SortIcon active={sortBy === 'productName'} direction={sortOrder} />
+                    </button>
+                  </th>
+                  <th>Category</th>
+                  <th>
+                    <button
+                      type="button"
+                      className="inline-flex items-center gap-1"
+                      onClick={() => toggleSort('stockQuantity')}
+                    >
+                      <span>Stock</span>
+                      <SortIcon active={sortBy === 'stockQuantity'} direction={sortOrder} />
                     </button>
                   </th>
                   <th>
                     <button
                       type="button"
                       className="inline-flex items-center gap-1"
-                      onClick={() => toggleSort('grossSales')}
+                      onClick={() => toggleSort('reorderLevel')}
                     >
-                      <span>Total Amount</span>
-                      <SortIcon active={sortBy === 'grossSales'} direction={sortOrder} />
+                      <span>Reorder</span>
+                      <SortIcon active={sortBy === 'reorderLevel'} direction={sortOrder} />
                     </button>
                   </th>
-                  <th>COGS</th>
                   <th>
                     <button
                       type="button"
                       className="inline-flex items-center gap-1"
-                      onClick={() => toggleSort('grossProfit')}
+                      onClick={() => toggleSort('updatedAt')}
                     >
-                      <span>Profit</span>
-                      <SortIcon active={sortBy === 'grossProfit'} direction={sortOrder} />
+                      <span>Updated</span>
+                      <SortIcon active={sortBy === 'updatedAt'} direction={sortOrder} />
                     </button>
                   </th>
-                  <th>Items</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {rows.length === 0 && (
                   <tr>
-                    <td colSpan={8} className="text-center text-slate-500">No sales found</td>
+                    <td colSpan={6} className="text-center text-slate-500">No inventory records found</td>
                   </tr>
                 )}
                 {rows.map((row) => (
-                  <tr key={row.id}>
-                    <td>#{row.id}</td>
-                    <td>{row.customer?.name || '-'}</td>
-                    <td>{formatDate(row.saleDate)}</td>
-                    <td>{formatAmount(row.grossSales)}</td>
-                    <td>{formatAmount(row.totalCogs)}</td>
-                    <td className={Number(row.grossProfit) < 0 ? 'text-red-700' : 'text-green-700'}>
-                      {formatAmount(row.grossProfit)}
-                    </td>
-                    <td>{row.items?.length || 0}</td>
+                  <tr key={row.productId}>
+                    <td>{row.productName || '-'}</td>
+                    <td>{formatCategory(row.category)}</td>
+                    <td className={getStockClass(row)}>{row.stockQuantity}</td>
+                    <td>{row.reorderLevel}</td>
+                    <td>{formatDateDDMMYYYY(row.updatedAt)}</td>
                     <td>
-                      <div className="flex items-center gap-2">
-                        <Button render={<Link to={`/sales/${row.id}`} />} variant="outline" size="sm">
-                          View
+                      {canUpdate ? (
+                        <Button
+                          render={<Link to={`/inventory/adjustments?productId=${row.productId}`} />}
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                        >
+                          Adjust
                         </Button>
-                        {canDelete && (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="border-red-300 text-red-700"
-                            onClick={() => setDeleteTarget(row)}
-                          >
-                            Delete
-                          </Button>
-                        )}
-                      </div>
+                      ) : (
+                        <span className="text-xs text-slate-400">Read only</span>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -281,7 +257,7 @@ export function SalesOrdersPage() {
         </section>
       )}
 
-      <SalesFilterDialog
+      <InventoryFilterDialog
         open={filtersOpen}
         onOpenChange={setFiltersOpen}
         value={filters}
@@ -292,35 +268,15 @@ export function SalesOrdersPage() {
           updateQuery({
             page: 1,
             filters: {
-              saleId: '',
-              customer: '',
-              productName: '',
-              productId: '',
-              minAmount: '',
-              maxAmount: '',
-              profit: '',
+              search: '',
+              category: '',
+              stockStatus: '',
+              lowStock: '',
               startDate: '',
               endDate: '',
             },
           })
         }}
-      />
-
-      <ConfirmDialog
-        open={Boolean(deleteTarget)}
-        onOpenChange={(open) => {
-          if (!open) setDeleteTarget(null)
-        }}
-        title="Delete Sale"
-        description={
-          deleteTarget
-            ? `Delete sale #${deleteTarget.id}? Stock will be restored automatically.`
-            : 'Delete this sale?'
-        }
-        confirmText="Delete"
-        destructive
-        loading={deleting}
-        onConfirm={handleConfirmDelete}
       />
     </section>
   )
