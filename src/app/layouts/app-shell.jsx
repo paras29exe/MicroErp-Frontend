@@ -5,11 +5,11 @@ import { Topbar } from '@/components/app/topbar'
 
 export function AppShell() {
   return (
-    <SidebarProvider defaultOpen>
+    <SidebarProvider defaultOpen className="h-screen overflow-hidden">
       <AppSidebar />
-      <SidebarInset className="min-h-screen w-full max-w-full overflow-x-hidden bg-slate-100">
+      <SidebarInset className="h-screen w-full max-w-full overflow-hidden bg-slate-100">
         <Topbar />
-        <main className="flex-1 max-w-full overflow-x-hidden p-4">
+        <main className="min-h-0 flex-1 max-w-full overflow-x-hidden overflow-y-auto p-4">
           <Outlet />
         </main>
       </SidebarInset>
