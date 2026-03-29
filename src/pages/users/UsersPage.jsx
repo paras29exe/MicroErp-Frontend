@@ -810,7 +810,7 @@ export function UsersPage() {
 
             {detailUser && !drawerLoading && (
               <>
-                <section className="grid gap-2 rounded-sm border border-slate-200 bg-white p-3 text-xs md:grid-cols-2">
+                <section className="grid wrap-anywhere gap-2 rounded-sm border border-slate-200 bg-white p-3 text-xs md:grid-cols-2">
                   <div>
                     <p className="text-slate-500">Employee ID</p>
                     <p className="font-semibold text-slate-800">{detailUser.employeeId}</p>
