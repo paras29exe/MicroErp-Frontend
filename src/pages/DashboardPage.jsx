@@ -4,6 +4,7 @@ import { getApiMessage } from '@/lib/api-response'
 import { KpiWidgets } from '@/components/dashboard/kpi-widgets'
 import { LowStockWidget } from '@/components/dashboard/low-stock-widget'
 import { LowStockTable } from '@/components/dashboard/low-stock-table'
+import { TrendCharts } from '@/components/dashboard/trend-charts'
 
 function toDateInputValue(date) {
   return date.toISOString().slice(0, 10)
@@ -29,7 +30,6 @@ export function DashboardPage() {
     setError('')
 
     try {
-      // console.log("api called")
       const data = await getDashboardOverview({ from: nextFrom, to: nextTo })
       setOverview(data)
     } catch (apiError) {
@@ -41,7 +41,6 @@ export function DashboardPage() {
 
   useEffect(() => {
     loadData(from, to)
-    console.log("hello from DashboardPage")
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -87,6 +86,7 @@ export function DashboardPage() {
       {!loading && !error && overview && (
         <>
           <KpiWidgets kpis={kpis} />
+          <TrendCharts trends={overview?.trends} />
           <LowStockWidget summary={alertsSummary} />
           <LowStockTable lowStock={lowStock} />
         </>

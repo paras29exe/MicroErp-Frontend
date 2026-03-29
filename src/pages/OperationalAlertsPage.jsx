@@ -4,6 +4,7 @@ import { getApiMessage } from '@/lib/api-response'
 import { formatDateTimeDDMMYYYY } from '@/lib/date-format'
 import { LowStockWidget } from '@/components/dashboard/low-stock-widget'
 import { LowStockTable } from '@/components/dashboard/low-stock-table'
+import { AlertsInsightBoard } from '@/components/dashboard/alerts-insight-board'
 
 function toDateInputValue(date) {
   return date.toISOString().slice(0, 10)
@@ -97,6 +98,7 @@ export function OperationalAlertsPage() {
 
       {!loading && !error && alerts && (
         <>
+          <AlertsInsightBoard alerts={alerts} />
           <LowStockWidget summary={alerts.summary} />
           <LowStockTable lowStock={lowStock} />
 

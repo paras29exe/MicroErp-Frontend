@@ -36,6 +36,8 @@ import { ProductionRegisterPage } from '@/pages/production/ProductionRegisterPag
 import { RecordProductionPage } from '@/pages/production/RecordProductionPage'
 import { BomManagerPage } from '@/pages/production/BomManagerPage'
 import { CreateBomPage } from '@/pages/production/CreateBomPage'
+import { UsersPage } from '@/pages/users/UsersPage'
+import { ProfilePage } from '@/pages/ProfilePage'
 
 function SessionBootstrap() {
   const setBootstrapping = useAuthStore((state) => state.setBootstrapping)
@@ -251,13 +253,13 @@ export function AppRouter() {
               path="/users"
               element={
                 <PermissionRoute permission="*">
-                  <ModulePlaceholderPage title="User Management" />
+                  <UsersPage />
                 </PermissionRoute>
               }
             />
             <Route
               path="/profile"
-              element={<ModulePlaceholderPage title="Profile" />}
+              element={<ProfilePage />}
             />
             <Route path="/dashboard" element={<Navigate to="/dashboard/overview" replace />} />
             <Route path="/sales" element={<Navigate to="/sales/orders" replace />} />
