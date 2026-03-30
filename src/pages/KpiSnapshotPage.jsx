@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { getDashboardKpis } from '@/features/dashboard/dashboard.api'
 import { getApiMessage } from '@/lib/api-response'
 import { KpiWidgets } from '@/components/dashboard/kpi-widgets'
+import { PageLoader } from '@/components/common/page-loader'
 
 function toDateInputValue(date) {
   return date.toISOString().slice(0, 10)
@@ -86,7 +87,7 @@ export function KpiSnapshotPage() {
         </form>
       </header>
 
-      {loading && <div className="border border-slate-300 bg-white px-3 py-2 text-sm">Loading KPI snapshot...</div>}
+      {loading && <PageLoader text="Loading KPI snapshot..." />}
       {error && <div className="border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
 
       {!loading && !error && payload && (

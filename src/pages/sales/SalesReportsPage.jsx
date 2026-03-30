@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { getSalesList } from '@/features/sales/sales.api'
 import { getApiMessage } from '@/lib/api-response'
+import { PageLoader } from '@/components/common/page-loader'
 import {
   Area,
   AreaChart,
@@ -134,7 +135,7 @@ export function SalesReportsPage() {
         </form>
       </header>
 
-      {loading && <div className="border border-slate-300 bg-white px-3 py-2 text-sm">Loading report widgets...</div>}
+      {loading && <PageLoader text="Loading sales report..." />}
       {error && <div className="border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
 
       {!loading && !error && (

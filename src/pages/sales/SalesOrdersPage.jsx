@@ -4,6 +4,7 @@ import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/common/confirm-dialog'
 import { SalesFilterDialog } from '@/components/sales/SalesFilterDialog'
+import { PageLoader } from '@/components/common/page-loader'
 import { deleteSale, getSalesList } from '@/features/sales/sales.api'
 import { getApiMessage } from '@/lib/api-response'
 import { formatDateDDMMYYYY } from '@/lib/date-format'
@@ -159,9 +160,6 @@ export function SalesOrdersPage() {
           <Button type="button" variant="outline" onClick={() => setFiltersOpen(true)}>
             Filters
           </Button>
-          <Button render={<Link to="/sales/new" />} className="bg-green-700 text-white hover:bg-green-800">
-            Record New Sale
-          </Button>
         </div>
       </header>
 
@@ -170,7 +168,13 @@ export function SalesOrdersPage() {
         <span className="ml-4 font-semibold text-slate-700">Total:</span> {meta.total}
       </section>
 
-      {loading && <div className="border border-slate-300 bg-white px-3 py-2 text-sm">Loading sales...</div>}
+      <section className="flex justify-end">
+        <Button render={<Link to="/sales/new" />} className="bg-green-700 text-white hover:bg-green-800">
+          Record New Sale
+        </Button>
+      </section>
+
+      {loading && <PageLoader text="Loading sales orders..." />}
       {error && <div className="border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
 
       {!loading && !error && (

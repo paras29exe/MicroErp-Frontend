@@ -5,8 +5,8 @@ import { XIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 
-function Dialog({ ...props }) {
-  return <DialogPrimitive.Root data-slot="dialog" {...props} />
+function Dialog({ disablePointerDismissal = true, ...props }) {
+  return <DialogPrimitive.Root data-slot="dialog" disablePointerDismissal={disablePointerDismissal} {...props} />
 }
 
 function DialogTrigger({ ...props }) {
@@ -22,7 +22,7 @@ function DialogOverlay({ className, ...props }) {
     <DialogPrimitive.Backdrop
       data-slot="dialog-overlay"
       className={cn(
-        "fixed inset-0 z-50 bg-black/20 transition-opacity duration-150 data-ending-style:opacity-0 data-starting-style:opacity-0",
+        "fixed inset-0 z-50 bg-slate-900/30 backdrop-blur-[2px] transition-opacity duration-200 data-ending-style:opacity-0 data-starting-style:opacity-0",
         className
       )}
       {...props}
@@ -37,7 +37,7 @@ function DialogContent({ className, children, showCloseButton = true, ...props }
       <DialogPrimitive.Popup
         data-slot="dialog-content"
         className={cn(
-          "fixed top-1/2 left-1/2 z-50 w-[92vw] max-w-3xl -translate-x-1/2 -translate-y-1/2 rounded-lg border border-border bg-background p-0 text-foreground shadow-lg transition duration-150 data-ending-style:opacity-0 data-ending-style:scale-95 data-starting-style:opacity-0 data-starting-style:scale-95",
+          "fixed top-1/2 left-1/2 z-50 w-[92vw] max-w-3xl -translate-x-1/2 -translate-y-1/2 rounded-xl border border-slate-200/90 bg-white p-0 text-foreground shadow-[0_30px_90px_rgba(15,23,42,0.28)] transition duration-200 data-ending-style:opacity-0 data-ending-style:scale-95 data-starting-style:opacity-0 data-starting-style:scale-95",
           className
         )}
         {...props}

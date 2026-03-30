@@ -18,6 +18,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { toast } from 'sonner'
+import { PageLoader } from '@/components/common/page-loader'
 
 function getSeverityClass(stockQuantity, reorderLevel) {
   if (stockQuantity === 0) return 'text-red-700'
@@ -94,7 +95,7 @@ export function InventoryLowStockPage() {
         </div>
       </header>
 
-      {loading && <div className="border border-slate-300 bg-white px-3 py-2 text-sm">Loading low stock list...</div>}
+      {loading && <PageLoader text="Loading low stock alerts..." />}
       {error && <div className="border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
 
       {!loading && !error && (
@@ -166,6 +167,10 @@ export function InventoryLowStockPage() {
         onOpenChange={(open) => {
           if (!open) {
             setEditTarget(null)
+          }
+        }}
+        onOpenChangeComplete={(open) => {
+          if (!open) {
             setNextReorderLevel('')
           }
         }}

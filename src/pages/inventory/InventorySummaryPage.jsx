@@ -6,6 +6,7 @@ import {
 } from '@/features/inventory/inventory.api'
 import { getApiMessage } from '@/lib/api-response'
 import { formatDateDDMMYYYY } from '@/lib/date-format'
+import { PageLoader } from '@/components/common/page-loader'
 
 function SummaryCard({ title, value, tone = 'default' }) {
   const toneClasses = {
@@ -104,7 +105,7 @@ export function InventorySummaryPage() {
         </Button>
       </header>
 
-      {loading && <div className="border border-slate-300 bg-white px-3 py-2 text-sm">Loading summary...</div>}
+      {loading && <PageLoader text="Loading inventory summary..." />}
       {error && <div className="border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
 
       {!loading && !error && (

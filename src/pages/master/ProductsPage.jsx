@@ -8,11 +8,20 @@ import {
   updateProduct,
 } from '@/features/master/products.api'
 import { ConfirmDialog } from '@/components/common/confirm-dialog'
+import {
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { getApiMessage } from '@/lib/api-response'
 import { formatDateDDMMYYYY } from '@/lib/date-format'
 import { useAuthStore } from '@/features/auth/auth.store'
 import { hasPermission } from '@/lib/permissions'
 import { toast } from 'sonner'
+import { PageLoader } from '@/components/common/page-loader'
 
 const CATEGORY_OPTIONS = [
   { label: 'All Categories', value: '' },
@@ -54,6 +63,7 @@ export function ProductsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [formError, setFormError] = useState('')
   const [editingId, setEditingId] = useState(null)
+  const [formDialogOpen, setFormDialogOpen] = useState(false)
   const [form, setForm] = useState({
     name: '',
     category: 'raw',
@@ -170,6 +180,11 @@ export function ProductsPage() {
     })
   }
 
+  function openCreateDialog() {
+    resetForm()
+    setFormDialogOpen(true)
+  }
+
   function handleEdit(item) {
     setEditingId(item.id)
     setFormError('')
@@ -179,6 +194,7 @@ export function ProductsPage() {
       restockLevel: String(item.restockLevel ?? ''),
       description: item.description || '',
     })
+    setFormDialogOpen(true)
   }
 
   async function handleSubmit(event) {
@@ -218,6 +234,7 @@ export function ProductsPage() {
         toast.success('Product created successfully')
       }
 
+      setFormDialogOpen(false)
       resetForm()
       setPage(1)
       await loadProducts({
@@ -287,8 +304,8 @@ export function ProductsPage() {
     <section className="space-y-3">
       <header className="flex flex-wrap items-center justify-between gap-3 border border-slate-300 bg-white px-3 py-2">
         <div>
-          <h2 className="text-sm font-semibold text-blue-700">Products Master</h2>
-          <p className="text-xs text-slate-500">Table-first product listing with filters</p>
+          <h2 className="text-sm font-semibold text-blue-700">Products Data</h2>
+          <p className="text-xs text-slate-500">Product listing with filters</p>
           <p className="text-xs text-slate-400">{activeFilterSummary}</p>
         </div>
 
@@ -354,72 +371,110 @@ export function ProductsPage() {
         </form>
       </header>
 
+      {(canCreate || canUpdate) && (
+        <Dialog
+          open={formDialogOpen}
+          onOpenChange={setFormDialogOpen}
+          onOpenChangeComplete={(open) => {
+            if (!open) resetForm()
+          }}
+        >
+          <DialogContent className="sm:max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>{editingId ? 'Edit Product' : 'Add Product'}</DialogTitle>
+              <DialogDescription>Capture product information with clear, structured fields.</DialogDescription>
+            </DialogHeader>
+            <DialogBody>
+              <form className="space-y-4" onSubmit={handleSubmit}>
+                <div className="grid gap-3 md:grid-cols-2">
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Product Name</label>
+                    <input
+                      type="text"
+                      value={form.name}
+                      onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))}
+                      placeholder="Enter product name"
+                      className="w-full rounded-sm border border-slate-300 px-2 py-1.5 text-xs"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Category</label>
+                    <select
+                      value={form.category}
+                      onChange={(event) => setForm((prev) => ({ ...prev, category: event.target.value }))}
+                      className="w-full rounded-sm border border-slate-300 px-2 py-1.5 text-xs"
+                    >
+                      {CATEGORY_OPTIONS.filter((option) => option.value).map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Restock Level</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="1"
+                      value={form.restockLevel}
+                      onChange={(event) => setForm((prev) => ({ ...prev, restockLevel: event.target.value }))}
+                      placeholder="Enter reorder threshold"
+                      className="w-full rounded-sm border border-slate-300 px-2 py-1.5 text-xs"
+                    />
+                  </div>
+
+                  <div className="space-y-1 md:col-span-2">
+                    <label className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Description</label>
+                    <input
+                      type="text"
+                      value={form.description}
+                      onChange={(event) => setForm((prev) => ({ ...prev, description: event.target.value }))}
+                      placeholder="Optional notes about this product"
+                      className="w-full rounded-sm border border-slate-300 px-2 py-1.5 text-xs"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end gap-2 border-t border-slate-200 pt-3">
+                  <button
+                    type="button"
+                    onClick={() => setFormDialogOpen(false)}
+                    className="rounded-sm border border-slate-300 px-3 py-1 text-xs"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="rounded-sm bg-green-700 px-3 py-1 text-xs font-semibold text-white hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {isSubmitting ? 'Saving...' : editingId ? 'Update Product' : 'Create Product'}
+                  </button>
+                </div>
+              </form>
+
+              {formError && <p className="mt-2 text-xs text-red-700">{formError}</p>}
+            </DialogBody>
+          </DialogContent>
+        </Dialog>
+      )}
+
       {canCreate && (
-        <section className="border border-slate-300 bg-white p-3">
-          <div className="mb-2 flex items-center justify-between">
-            <h3 className="text-xs font-semibold text-slate-700">
-              {editingId ? 'Edit Product' : 'Add Product'}
-            </h3>
-            {editingId && (
-              <button
-                type="button"
-                onClick={resetForm}
-                className="rounded-sm border border-slate-300 px-2 py-1 text-xs"
-              >
-                Cancel Edit
-              </button>
-            )}
-          </div>
-
-          <form className="grid gap-2 md:grid-cols-5" onSubmit={handleSubmit}>
-            <input
-              type="text"
-              value={form.name}
-              onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))}
-              placeholder="Product name"
-              className="rounded-sm border border-slate-300 px-2 py-1 text-xs"
-            />
-            <select
-              value={form.category}
-              onChange={(event) => setForm((prev) => ({ ...prev, category: event.target.value }))}
-              className="rounded-sm border border-slate-300 px-2 py-1 text-xs"
-            >
-              {CATEGORY_OPTIONS.filter((option) => option.value).map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-            <input
-              type="number"
-              min="0"
-              step="1"
-              value={form.restockLevel}
-              onChange={(event) => setForm((prev) => ({ ...prev, restockLevel: event.target.value }))}
-              placeholder="Restock level"
-              className="rounded-sm border border-slate-300 px-2 py-1 text-xs"
-            />
-            <input
-              type="text"
-              value={form.description}
-              onChange={(event) => setForm((prev) => ({ ...prev, description: event.target.value }))}
-              placeholder="Description (optional)"
-              className="rounded-sm border border-slate-300 px-2 py-1 text-xs"
-            />
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="rounded-sm bg-green-700 px-3 py-1 text-xs font-semibold text-white hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {isSubmitting ? 'Saving...' : editingId ? 'Update' : 'Create'}
-            </button>
-          </form>
-
-          {formError && <p className="mt-2 text-xs text-red-700">{formError}</p>}
+        <section className="flex justify-end">
+          <button
+            type="button"
+            onClick={openCreateDialog}
+            className="rounded-sm bg-blue-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-800"
+          >
+            Add Product
+          </button>
         </section>
       )}
 
-      {loading && <div className="border border-slate-300 bg-white px-3 py-2 text-sm">Loading products...</div>}
+      {loading && <PageLoader text="Loading products..." />}
       {error && <div className="border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
 
       {!loading && (

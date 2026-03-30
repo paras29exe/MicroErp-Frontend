@@ -14,6 +14,7 @@ import { formatDateDDMMYYYY } from '@/lib/date-format'
 import { hasPermission } from '@/lib/permissions'
 import { useAuthStore } from '@/features/auth/auth.store'
 import { toast } from 'sonner'
+import { PageLoader } from '@/components/common/page-loader'
 
 function formatAmount(value) {
   return Number(value || 0).toFixed(2)
@@ -223,7 +224,7 @@ export function PurchaseOrdersPage() {
       <header className="flex flex-wrap items-center justify-between gap-2 border border-slate-300 bg-white px-3 py-2">
         <div>
           <h2 className="text-sm font-semibold text-blue-700">Purchase Orders</h2>
-          <p className="text-xs text-slate-500">Click Total Amount or Purchase Date to toggle sorting</p>
+          <p className="text-xs text-slate-500">Track vendor purchases, payment status, and order value trends.</p>
         </div>
         <div className="flex items-center gap-2 text-xs text-slate-600">
           {vendor && (
@@ -235,19 +236,22 @@ export function PurchaseOrdersPage() {
           <Button type="button" variant="outline" size="sm" onClick={() => setFiltersOpen(true)}>
             Filters
           </Button>
-          <Button render={<Link to="/purchases/new" />} type="button" size="sm" className="bg-green-700 text-white hover:bg-green-800">
-            Record New Purchase
-          </Button>
         </div>
       </header>
 
-      {loading && <div className="border border-slate-300 bg-white px-3 py-2 text-sm">Loading purchases...</div>}
+      {loading && <PageLoader text="Loading purchase orders..." />}
       {error && <div className="border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
 
       <section className="border border-slate-300 bg-white px-3 py-2 text-xs text-slate-600">
         <span className="font-semibold text-slate-700">Purchase ID:</span> {purchaseId || 'Any'}
         <span className="ml-4 font-semibold text-slate-700">Payment:</span> {filters.paymentStatus || 'Any'}
         <span className="ml-4 font-semibold text-slate-700">Total:</span> {meta.total}
+      </section>
+
+      <section className="flex justify-end">
+        <Button render={<Link to="/purchases/new" />} type="button" size="sm" className="bg-green-700 text-white hover:bg-green-800">
+          Record New Purchase
+        </Button>
       </section>
 
       {!loading && !error && (

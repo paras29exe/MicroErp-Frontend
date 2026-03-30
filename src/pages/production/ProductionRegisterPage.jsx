@@ -18,6 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { PageLoader } from '@/components/common/page-loader'
 
 function parsePositiveInt(value, fallback) {
   const parsed = Number.parseInt(value || '', 10)
@@ -163,7 +164,7 @@ export function ProductionRegisterPage() {
         <span className="ml-4 font-semibold text-slate-700">Quantity:</span> {filters.minQty || 'Any'} - {filters.maxQty || 'Any'}
       </section>
 
-      {loading && <div className="border border-slate-300 bg-white px-3 py-2 text-sm">Loading production runs...</div>}
+      {loading && <PageLoader text="Loading production entries..." />}
       {error && <div className="border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
 
       {!loading && !error && (

@@ -8,6 +8,7 @@ import { useAuthStore } from '@/features/auth/auth.store'
 import { getApiMessage } from '@/lib/api-response'
 import { formatDateDDMMYYYY } from '@/lib/date-format'
 import { hasPermission } from '@/lib/permissions'
+import { PageLoader } from '@/components/common/page-loader'
 
 function parsePositiveInt(value, fallback) {
   const parsed = Number.parseInt(value || '', 10)
@@ -147,7 +148,7 @@ export function InventoryStockPage() {
         <span className="ml-4 font-semibold text-slate-700">Status:</span> {filters.stockStatus || 'Any'}
       </section>
 
-      {loading && <div className="border border-slate-300 bg-white px-3 py-2 text-sm">Loading inventory...</div>}
+      {loading && <PageLoader text="Loading inventory stock..." />}
       {error && <div className="border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
 
       {!loading && !error && (
