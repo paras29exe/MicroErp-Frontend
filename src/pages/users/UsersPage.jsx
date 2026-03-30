@@ -45,6 +45,7 @@ const STATUS_OPTIONS = [
   { label: 'All', value: 'all' },
   { label: 'Active', value: 'active' },
   { label: 'Inactive', value: 'inactive' },
+  { label: 'Deleted', value: 'deleted' },
 ]
 
 const SORTABLE_COLUMNS = ['employeeId', 'name', 'email', 'role', 'isActive', 'createdAt']
@@ -741,7 +742,11 @@ export function UsersPage() {
                       <td>{item.email}</td>
                       <td>{getRoleLabel(item.role)}</td>
                       <td>
-                        {item.isActive ? (
+                        {item.isDeleted ? (
+                          <span className="rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-medium text-red-800">
+                            Deleted
+                          </span>
+                        ) : item.isActive ? (
                           <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-medium text-emerald-800">
                             Active
                           </span>
@@ -761,41 +766,48 @@ export function UsersPage() {
                           >
                             View
                           </button>
-                          <button
-                            type="button"
-                            onClick={() => handleEdit(item)}
-                            className="rounded-sm border border-slate-300 px-2 py-1 text-xs"
-                          >
-                            Edit
-                          </button>
 
-                          {item.isActive ? (
-                            <button
-                              type="button"
-                              disabled={isSelf}
-                              onClick={() => askDeactivate(item)}
-                              className="rounded-sm border border-amber-300 px-2 py-1 text-xs text-amber-700 disabled:cursor-not-allowed disabled:opacity-50"
-                            >
-                              Deactivate
-                            </button>
+                          {!item.isDeleted ? (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => handleEdit(item)}
+                                className="rounded-sm border border-slate-300 px-2 py-1 text-xs"
+                              >
+                                Edit
+                              </button>
+
+                              {item.isActive ? (
+                                <button
+                                  type="button"
+                                  disabled={isSelf}
+                                  onClick={() => askDeactivate(item)}
+                                  className="rounded-sm border border-amber-300 px-2 py-1 text-xs text-amber-700 disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                  Deactivate
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => askActivate(item)}
+                                  className="rounded-sm border border-emerald-300 px-2 py-1 text-xs text-emerald-700"
+                                >
+                                  Activate
+                                </button>
+                              )}
+
+                              <button
+                                type="button"
+                                disabled={isSelf}
+                                onClick={() => askDelete(item)}
+                                className="rounded-sm border border-red-300 px-2 py-1 text-xs text-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+                              >
+                                Delete
+                              </button>
+                            </>
                           ) : (
-                            <button
-                              type="button"
-                              onClick={() => askActivate(item)}
-                              className="rounded-sm border border-emerald-300 px-2 py-1 text-xs text-emerald-700"
-                            >
-                              Activate
-                            </button>
+                            <span className="text-xs text-slate-500">Deleted record</span>
                           )}
-
-                          <button
-                            type="button"
-                            disabled={isSelf}
-                            onClick={() => askDelete(item)}
-                            className="rounded-sm border border-red-300 px-2 py-1 text-xs text-red-700 disabled:cursor-not-allowed disabled:opacity-50"
-                          >
-                            Delete
-                          </button>
                         </div>
                       </td>
                     </tr>
@@ -891,7 +903,9 @@ export function UsersPage() {
                   </div>
                   <div>
                     <p className="text-slate-500">Status</p>
-                    <p className="font-semibold text-slate-800">{detailUser.isActive ? 'Active' : 'Inactive'}</p>
+                    <p className="font-semibold text-slate-800">
+                      {detailUser.isDeleted ? 'Deleted' : detailUser.isActive ? 'Active' : 'Inactive'}
+                    </p>
                   </div>
                   <div>
                     <p className="text-slate-500">Created</p>
@@ -905,6 +919,12 @@ export function UsersPage() {
                     <p className="text-slate-500">Deactivated At</p>
                     <p className="font-semibold text-slate-800">
                       {detailUser.deactivatedAt ? formatDateTimeDDMMYYYY(detailUser.deactivatedAt) : '-'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500">Deleted At</p>
+                    <p className="font-semibold text-slate-800">
+                      {detailUser.deletedAt ? formatDateTimeDDMMYYYY(detailUser.deletedAt) : '-'}
                     </p>
                   </div>
                 </section>
