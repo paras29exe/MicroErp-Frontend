@@ -5,6 +5,7 @@ import { KpiWidgets } from '@/components/dashboard/kpi-widgets'
 import { LowStockWidget } from '@/components/dashboard/low-stock-widget'
 import { LowStockTable } from '@/components/dashboard/low-stock-table'
 import { TrendCharts } from '@/components/dashboard/trend-charts'
+import { PageLoader } from '@/components/common/page-loader'
 
 function toDateInputValue(date) {
   return date.toISOString().slice(0, 10)
@@ -80,7 +81,7 @@ export function DashboardPage() {
         </form>
       </header>
 
-      {loading && <div className="border border-slate-300 bg-white px-3 py-2 text-sm">Loading dashboard data...</div>}
+      {loading && <PageLoader text="Loading dashboard data..." />}
       {error && <div className="border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
 
       {!loading && !error && overview && (

@@ -8,11 +8,20 @@ import {
   updateCustomer,
 } from '@/features/master/customers.api'
 import { ConfirmDialog } from '@/components/common/confirm-dialog'
+import {
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { getApiMessage } from '@/lib/api-response'
 import { formatDateDDMMYYYY } from '@/lib/date-format'
 import { useAuthStore } from '@/features/auth/auth.store'
 import { hasPermission } from '@/lib/permissions'
 import { toast } from 'sonner'
+import { PageLoader } from '@/components/common/page-loader'
 
 function formatDate(value) {
   return formatDateDDMMYYYY(value)
@@ -47,6 +56,7 @@ export function CustomersPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [formError, setFormError] = useState('')
   const [editingId, setEditingId] = useState(null)
+  const [formDialogOpen, setFormDialogOpen] = useState(false)
   const [form, setForm] = useState({ name: '', phone: '', email: '', address: '' })
 
   const initialSearch = (searchParams.get('search') || '').trim()
@@ -131,6 +141,11 @@ export function CustomersPage() {
     setForm({ name: '', phone: '', email: '', address: '' })
   }
 
+  function openCreateDialog() {
+    resetForm()
+    setFormDialogOpen(true)
+  }
+
   function handleEdit(item) {
     setEditingId(item.id)
     setFormError('')
@@ -140,6 +155,7 @@ export function CustomersPage() {
       email: item.email || '',
       address: item.address || '',
     })
+    setFormDialogOpen(true)
   }
 
   async function handleSubmit(event) {
@@ -168,6 +184,7 @@ export function CustomersPage() {
         toast.success('Customer created successfully')
       }
 
+      setFormDialogOpen(false)
       resetForm()
       setPage(1)
       await loadCustomers({ page: 1, pageSize, status, ...(search ? { search } : {}) })
@@ -219,8 +236,8 @@ export function CustomersPage() {
     <section className="space-y-3">
       <header className="flex flex-wrap items-center justify-between gap-3 border border-slate-300 bg-white px-3 py-2">
         <div>
-          <h2 className="text-sm font-semibold text-blue-700">Customers Master</h2>
-          <p className="text-xs text-slate-500">Table-first customer listing with single search</p>
+          <h2 className="text-sm font-semibold text-blue-700">Customers Data</h2>
+          <p className="text-xs text-slate-500">Customer listing with single search</p>
         </div>
 
         <form
@@ -271,66 +288,104 @@ export function CustomersPage() {
         </form>
       </header>
 
+      {(canCreate || canUpdate) && (
+        <Dialog
+          open={formDialogOpen}
+          onOpenChange={setFormDialogOpen}
+          onOpenChangeComplete={(open) => {
+            if (!open) resetForm()
+          }}
+        >
+          <DialogContent className="sm:max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>{editingId ? 'Edit Customer' : 'Add Customer'}</DialogTitle>
+              <DialogDescription>Maintain customer profile details in a structured form.</DialogDescription>
+            </DialogHeader>
+            <DialogBody>
+              <form className="space-y-4" onSubmit={handleSubmit}>
+                <div className="grid gap-3 md:grid-cols-2">
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Customer Name</label>
+                    <input
+                      type="text"
+                      value={form.name}
+                      onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))}
+                      placeholder="Enter full customer name"
+                      className="w-full rounded-sm border border-slate-300 px-2 py-1.5 text-xs"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Phone</label>
+                    <input
+                      type="text"
+                      value={form.phone}
+                      onChange={(event) => setForm((prev) => ({ ...prev, phone: event.target.value }))}
+                      placeholder="Enter phone number"
+                      className="w-full rounded-sm border border-slate-300 px-2 py-1.5 text-xs"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Email</label>
+                    <input
+                      type="email"
+                      value={form.email}
+                      onChange={(event) => setForm((prev) => ({ ...prev, email: event.target.value }))}
+                      placeholder="name@company.com"
+                      className="w-full rounded-sm border border-slate-300 px-2 py-1.5 text-xs"
+                    />
+                  </div>
+
+                  <div className="space-y-1 md:col-span-2">
+                    <label className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Address</label>
+                    <input
+                      type="text"
+                      value={form.address}
+                      onChange={(event) => setForm((prev) => ({ ...prev, address: event.target.value }))}
+                      placeholder="Street, city, state, postal code"
+                      className="w-full rounded-sm border border-slate-300 px-2 py-1.5 text-xs"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end gap-2 border-t border-slate-200 pt-3">
+                  <button
+                    type="button"
+                    onClick={() => setFormDialogOpen(false)}
+                    className="rounded-sm border border-slate-300 px-3 py-1 text-xs"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="rounded-sm bg-green-700 px-3 py-1 text-xs font-semibold text-white hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {isSubmitting ? 'Saving...' : editingId ? 'Update Customer' : 'Create Customer'}
+                  </button>
+                </div>
+              </form>
+
+              {formError && <p className="mt-2 text-xs text-red-700">{formError}</p>}
+            </DialogBody>
+          </DialogContent>
+        </Dialog>
+      )}
+
       {canCreate && (
-        <section className="border border-slate-300 bg-white p-3">
-          <div className="mb-2 flex items-center justify-between">
-            <h3 className="text-xs font-semibold text-slate-700">
-              {editingId ? 'Edit Customer' : 'Add Customer'}
-            </h3>
-            {editingId && (
-              <button
-                type="button"
-                onClick={resetForm}
-                className="rounded-sm border border-slate-300 px-2 py-1 text-xs"
-              >
-                Cancel Edit
-              </button>
-            )}
-          </div>
-
-          <form className="grid gap-2 md:grid-cols-5" onSubmit={handleSubmit}>
-            <input
-              type="text"
-              value={form.name}
-              onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))}
-              placeholder="Customer name"
-              className="rounded-sm border border-slate-300 px-2 py-1 text-xs"
-            />
-            <input
-              type="text"
-              value={form.phone}
-              onChange={(event) => setForm((prev) => ({ ...prev, phone: event.target.value }))}
-              placeholder="Phone"
-              className="rounded-sm border border-slate-300 px-2 py-1 text-xs"
-            />
-            <input
-              type="email"
-              value={form.email}
-              onChange={(event) => setForm((prev) => ({ ...prev, email: event.target.value }))}
-              placeholder="Email"
-              className="rounded-sm border border-slate-300 px-2 py-1 text-xs"
-            />
-            <input
-              type="text"
-              value={form.address}
-              onChange={(event) => setForm((prev) => ({ ...prev, address: event.target.value }))}
-              placeholder="Address"
-              className="rounded-sm border border-slate-300 px-2 py-1 text-xs"
-            />
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="rounded-sm bg-green-700 px-3 py-1 text-xs font-semibold text-white hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {isSubmitting ? 'Saving...' : editingId ? 'Update' : 'Create'}
-            </button>
-          </form>
-
-          {formError && <p className="mt-2 text-xs text-red-700">{formError}</p>}
+        <section className="flex justify-end">
+          <button
+            type="button"
+            onClick={openCreateDialog}
+            className="rounded-sm bg-blue-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-800"
+          >
+            Add Customer
+          </button>
         </section>
       )}
 
-      {loading && <div className="border border-slate-300 bg-white px-3 py-2 text-sm">Loading customers...</div>}
+      {loading && <PageLoader text="Loading customers..." />}
       {error && <div className="border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
 
       {!loading && (

@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { getSaleById } from '@/features/sales/sales.api'
 import { getApiMessage } from '@/lib/api-response'
 import { formatDateDDMMYYYY } from '@/lib/date-format'
+import { PageLoader } from '@/components/common/page-loader'
 
 function formatAmount(value) {
   return Number(value || 0).toFixed(2)
@@ -45,7 +46,7 @@ export function SaleDetailsPage() {
         </Button>
       </header>
 
-      {loading && <div className="border border-slate-300 bg-white px-3 py-2 text-sm">Loading sale details...</div>}
+      {loading && <PageLoader text="Loading sale details..." />}
       {error && <div className="border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
 
       {!loading && !error && sale && (

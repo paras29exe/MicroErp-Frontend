@@ -15,12 +15,21 @@ import { useAuthStore } from '@/features/auth/auth.store'
 import { getApiMessage } from '@/lib/api-response'
 import { formatDateDDMMYYYY, formatDateTimeDDMMYYYY } from '@/lib/date-format'
 import {
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import {
   Sheet,
   SheetContent,
   SheetDescription,
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet'
+import { PageLoader } from '@/components/common/page-loader'
 
 const ROLE_OPTIONS = [
   { label: 'All Roles', value: '' },
@@ -95,6 +104,7 @@ export function UsersPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [formError, setFormError] = useState('')
   const [editingId, setEditingId] = useState(null)
+  const [formDialogOpen, setFormDialogOpen] = useState(false)
   const [form, setForm] = useState(getInitialForm())
 
   const [confirmState, setConfirmState] = useState({ type: '', user: null })
@@ -268,6 +278,11 @@ export function UsersPage() {
     setForm(getInitialForm())
   }
 
+  function openCreateDialog() {
+    resetForm()
+    setFormDialogOpen(true)
+  }
+
   function handleEdit(item) {
     setEditingId(item.id)
     setFormError('')
@@ -279,6 +294,7 @@ export function UsersPage() {
       password: '',
       isActive: Boolean(item.isActive),
     })
+    setFormDialogOpen(true)
   }
 
   async function handleSubmit(event) {
@@ -338,6 +354,7 @@ export function UsersPage() {
         toast.success('User created successfully')
       }
 
+      setFormDialogOpen(false)
       resetForm()
       setPage(1)
       await loadUsers({
@@ -533,90 +550,139 @@ export function UsersPage() {
         </form>
       </header>
 
-      <section className="border border-slate-300 bg-white p-3">
-        <div className="mb-2 flex items-center justify-between">
-          <h3 className="text-xs font-semibold text-slate-700">{editingId ? 'Edit User' : 'Add User'}</h3>
-          {editingId && (
-            <button
-              type="button"
-              onClick={resetForm}
-              className="rounded-sm border border-slate-300 px-2 py-1 text-xs"
-            >
-              Cancel Edit
-            </button>
-          )}
-        </div>
-
-        <form className="grid gap-2 md:grid-cols-7" onSubmit={handleSubmit}>
-          <input
-            type="text"
-            value={form.employeeId}
-            onChange={(event) => setForm((prev) => ({ ...prev, employeeId: event.target.value }))}
-            placeholder="Employee ID"
-            className="rounded-sm border border-slate-300 px-2 py-1 text-xs"
-          />
-          <input
-            type="text"
-            value={form.name}
-            onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))}
-            placeholder="Full name"
-            className="rounded-sm border border-slate-300 px-2 py-1 text-xs"
-          />
-          <input
-            type="email"
-            value={form.email}
-            onChange={(event) => setForm((prev) => ({ ...prev, email: event.target.value }))}
-            placeholder="Email"
-            className="rounded-sm border border-slate-300 px-2 py-1 text-xs"
-          />
-          <select
-            value={form.role}
-            onChange={(event) => setForm((prev) => ({ ...prev, role: event.target.value }))}
-            className="rounded-sm border border-slate-300 px-2 py-1 text-xs"
-          >
-            {ROLE_OPTIONS.filter((option) => option.value).map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-
-          <input
-            type="password"
-            value={form.password}
-            onChange={(event) => setForm((prev) => ({ ...prev, password: event.target.value }))}
-            placeholder={editingId ? 'New password (optional)' : 'Password'}
-            className="rounded-sm border border-slate-300 px-2 py-1 text-xs"
-          />
-
-          {editingId ? (
-            <select
-              value={form.isActive ? 'true' : 'false'}
-              onChange={(event) => setForm((prev) => ({ ...prev, isActive: event.target.value === 'true' }))}
-              className="rounded-sm border border-slate-300 px-2 py-1 text-xs"
-            >
-              <option value="true">Active</option>
-              <option value="false">Inactive</option>
-            </select>
-          ) : (
-            <div className="rounded-sm border border-slate-200 bg-slate-50 px-2 py-1 text-xs text-slate-500">
-              Default status: Active
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="rounded-sm bg-green-700 px-3 py-1 text-xs font-semibold text-white hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {isSubmitting ? 'Saving...' : editingId ? 'Update' : 'Create'}
-          </button>
-        </form>
-
-        {formError && <p className="mt-2 text-xs text-red-700">{formError}</p>}
+      <section className="flex justify-end">
+        <button
+          type="button"
+          onClick={openCreateDialog}
+          className="rounded-sm bg-blue-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-800"
+        >
+          Add User
+        </button>
       </section>
 
-      {loading && <div className="border border-slate-300 bg-white px-3 py-2 text-sm">Loading users...</div>}
+      <Dialog
+        open={formDialogOpen}
+        onOpenChange={setFormDialogOpen}
+        onOpenChangeComplete={(open) => {
+          if (!open) resetForm()
+        }}
+      >
+        <DialogContent className="sm:max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>{editingId ? 'Edit User' : 'Add User'}</DialogTitle>
+            <DialogDescription>Configure user identity, role, and account access settings.</DialogDescription>
+          </DialogHeader>
+          <DialogBody>
+            <form className="space-y-4" onSubmit={handleSubmit}>
+              <div className="grid gap-3 md:grid-cols-2">
+                <div className="space-y-1">
+                  <label className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Employee ID</label>
+                  <input
+                    type="text"
+                    value={form.employeeId}
+                    onChange={(event) => setForm((prev) => ({ ...prev, employeeId: event.target.value }))}
+                    placeholder="Enter employee ID"
+                    className="w-full rounded-sm border border-slate-300 px-2 py-1.5 text-xs"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Full Name</label>
+                  <input
+                    type="text"
+                    value={form.name}
+                    onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))}
+                    placeholder="Enter full name"
+                    className="w-full rounded-sm border border-slate-300 px-2 py-1.5 text-xs"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Email</label>
+                  <input
+                    type="email"
+                    value={form.email}
+                    onChange={(event) => setForm((prev) => ({ ...prev, email: event.target.value }))}
+                    placeholder="name@company.com"
+                    className="w-full rounded-sm border border-slate-300 px-2 py-1.5 text-xs"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Role</label>
+                  <select
+                    value={form.role}
+                    onChange={(event) => setForm((prev) => ({ ...prev, role: event.target.value }))}
+                    className="w-full rounded-sm border border-slate-300 px-2 py-1.5 text-xs"
+                  >
+                    {ROLE_OPTIONS.filter((option) => option.value).map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                    {editingId ? 'New Password (Optional)' : 'Password'}
+                  </label>
+                  <input
+                    type="password"
+                    value={form.password}
+                    onChange={(event) => setForm((prev) => ({ ...prev, password: event.target.value }))}
+                    placeholder={editingId ? 'Leave blank to keep existing password' : 'Create strong password'}
+                    className="w-full rounded-sm border border-slate-300 px-2 py-1.5 text-xs"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Status</label>
+                  {editingId ? (
+                    <select
+                      value={form.isActive ? 'true' : 'false'}
+                      onChange={(event) => setForm((prev) => ({ ...prev, isActive: event.target.value === 'true' }))}
+                      className="w-full rounded-sm border border-slate-300 px-2 py-1.5 text-xs"
+                    >
+                      <option value="true">Active</option>
+                      <option value="false">Inactive</option>
+                    </select>
+                  ) : (
+                    <div className="rounded-sm border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs text-slate-500">
+                      Default status: Active
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="rounded-sm border border-blue-100 bg-blue-50 px-2.5 py-2 text-xs text-blue-700">
+                Password must be at least 8 characters and include uppercase, lowercase, number, and special character.
+              </div>
+
+              <div className="flex items-center justify-end gap-2 border-t border-slate-200 pt-3">
+                <button
+                  type="button"
+                  onClick={() => setFormDialogOpen(false)}
+                  className="rounded-sm border border-slate-300 px-3 py-1 text-xs"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="rounded-sm bg-green-700 px-3 py-1 text-xs font-semibold text-white hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {isSubmitting ? 'Saving...' : editingId ? 'Update User' : 'Create User'}
+                </button>
+              </div>
+            </form>
+
+            {formError && <p className="mt-2 text-xs text-red-700">{formError}</p>}
+          </DialogBody>
+        </DialogContent>
+      </Dialog>
+
+      {loading && <PageLoader text="Loading user accounts..." />}
       {error && <div className="border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
 
       {!loading && (
@@ -891,6 +957,7 @@ export function UsersPage() {
                     </button>
                   </div>
                 </section>
+
               </>
             )}
           </div>
