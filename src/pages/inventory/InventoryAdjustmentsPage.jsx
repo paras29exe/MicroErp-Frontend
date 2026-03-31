@@ -10,6 +10,7 @@ import {
 } from '@/features/inventory/inventory.api'
 import { getApiMessage } from '@/lib/api-response'
 import { toast } from 'sonner'
+import { LoaderCircle } from 'lucide-react'
 
 export function InventoryAdjustmentsPage() {
   const [searchParams] = useSearchParams()
@@ -25,6 +26,7 @@ export function InventoryAdjustmentsPage() {
   const [quantity, setQuantity] = useState(1)
   const [reason, setReason] = useState('')
   const [snapshot, setSnapshot] = useState(null)
+  const [inventoryLoading, setInventoryLoading] = useState(false)
 
   async function loadProducts(searchText) {
     setProductsLoading(true)
@@ -45,10 +47,13 @@ export function InventoryAdjustmentsPage() {
     }
 
     try {
+      setInventoryLoading(true)
       const data = await getInventoryByProductId(Number(nextProductId))
       setSnapshot(data)
     } catch {
       setSnapshot(null)
+    } finally {
+      setInventoryLoading(false)
     }
   }
 
@@ -146,7 +151,7 @@ export function InventoryAdjustmentsPage() {
         </div>
 
         <div className="space-y-1">
-          <label className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Quantity</label>
+          <label className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Adjusted Quantity</label>
           <input
             type="number"
             min="1"
@@ -171,10 +176,10 @@ export function InventoryAdjustmentsPage() {
       <section className="border border-slate-300 bg-slate-50 px-3 py-2 text-xs">
         <p className="font-semibold text-slate-700">Current Snapshot</p>
         <div className="mt-1 grid gap-1 sm:grid-cols-2">
-          <p><span className="font-semibold">Stock:</span> {snapshot?.stockQuantity ?? '-'}</p>
-          <p><span className="font-semibold">Reorder Level:</span> {snapshot?.reorderLevel ?? '-'}</p>
-          <p><span className="font-semibold">Avg Cost:</span> {snapshot?.avgCost ?? '-'}</p>
-          <p><span className="font-semibold">Stock Value:</span> {snapshot?.stockValue ?? '-'}</p>
+          <p><span className="font-semibold">Stock:</span> {inventoryLoading ? <LoaderCircle className="h-4 w-4 animate-spin inline-block" /> : snapshot?.stockQuantity ?? '-'}</p>
+          <p><span className="font-semibold">Reorder Level:</span> {inventoryLoading ? <LoaderCircle className="h-4 w-4 animate-spin inline-block" /> : snapshot?.reorderLevel ?? '-'}</p>
+          <p><span className="font-semibold">Avg Cost:</span> {inventoryLoading ? <LoaderCircle className="h-4 w-4 animate-spin inline-block" /> : snapshot?.avgCost ?? '-'}</p>
+          <p><span className="font-semibold">Stock Value:</span> {inventoryLoading ? <LoaderCircle className="h-4 w-4 animate-spin inline-block" /> : snapshot?.stockValue ?? '-'}</p>
         </div>
       </section>
 

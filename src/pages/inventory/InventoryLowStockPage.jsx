@@ -164,11 +164,7 @@ export function InventoryLowStockPage() {
 
       <Dialog
         open={Boolean(editTarget)}
-        onOpenChange={(open) => {
-          if (!open) {
-            setEditTarget(null)
-          }
-        }}
+        onOpenChange={setEditTarget}
         onOpenChangeComplete={(open) => {
           if (!open) {
             setNextReorderLevel('')
