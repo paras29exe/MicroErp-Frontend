@@ -23,7 +23,7 @@ export function ProtectedRoute({ children }) {
 export function PermissionRoute({ permission, children }) {
   const { user } = useAuthStore()
 
-  if (!user || !hasPermission(user.role, permission)) {
+  if (!user || !hasPermission(user, permission)) {
     return <Navigate to="/unauthorized" replace />
   }
 

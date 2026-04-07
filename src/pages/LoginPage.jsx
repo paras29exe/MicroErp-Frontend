@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { login } from '@/features/auth/auth.api'
+import { getMyEffectivePermissions, login } from '@/features/auth/auth.api'
 import { useAuthStore } from '@/features/auth/auth.store'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -46,7 +46,11 @@ export function LoginPage() {
       }
 
       const user = await login(payload)
-      setUser(user)
+      const permissionData = await getMyEffectivePermissions().catch(() => null)
+      setUser({
+        ...user,
+        effectivePermissions: permissionData?.effectivePermissions || [],
+      })
       navigate('/dashboard', { replace: true })
     } catch (error) {
       setErrorMessage(getApiMessage(error, 'Login failed'))

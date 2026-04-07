@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { ConfirmDialog } from '@/components/common/confirm-dialog'
 import {
@@ -776,6 +776,13 @@ export function UsersPage() {
                               >
                                 Edit
                               </button>
+
+                              <Link
+                                to={`/users/${item.id}/permissions`}
+                                className="rounded-sm border border-blue-300 px-2 py-1 text-xs text-blue-700"
+                              >
+                                Permissions
+                              </Link>
 
                               {item.isActive ? (
                                 <button

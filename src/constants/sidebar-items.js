@@ -307,10 +307,10 @@ const NAV_SECTIONS = [
   },
 ]
 
-function filterItemByPermission(role, item) {
+function filterItemByPermission(userOrRole, item) {
   if (item.subItems) {
     const filteredSubItems = item.subItems.filter((subItem) =>
-      hasPermission(role, subItem.permission),
+      hasPermission(userOrRole, subItem.permission),
     )
 
     if (filteredSubItems.length === 0) {
@@ -323,17 +323,17 @@ function filterItemByPermission(role, item) {
     }
   }
 
-  if (!hasPermission(role, item.permission)) {
+  if (!hasPermission(userOrRole, item.permission)) {
     return null
   }
 
   return item
 }
 
-export function getSidebarSections(role) {
+export function getSidebarSections(userOrRole) {
   return NAV_SECTIONS.map((section) => {
     const items = section.items
-      .map((item) => filterItemByPermission(role, item))
+      .map((item) => filterItemByPermission(userOrRole, item))
       .filter(Boolean)
 
     return {

@@ -37,6 +37,7 @@ import { RecordProductionPage } from '@/pages/production/RecordProductionPage'
 import { BomManagerPage } from '@/pages/production/BomManagerPage'
 import { CreateBomPage } from '@/pages/production/CreateBomPage'
 import { UsersPage } from '@/pages/users/UsersPage'
+import { UserPermissionsPage } from '@/pages/users/UserPermissionsPage'
 import { ProfilePage } from '@/pages/ProfilePage'
 
 function SessionBootstrap() {
@@ -254,6 +255,14 @@ export function AppRouter() {
               element={
                 <PermissionRoute permission="*">
                   <UsersPage />
+                </PermissionRoute>
+              }
+            />
+            <Route
+              path="/users/:id/permissions"
+              element={
+                <PermissionRoute permission="*">
+                  <UserPermissionsPage />
                 </PermissionRoute>
               }
             />

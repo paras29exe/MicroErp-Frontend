@@ -92,3 +92,23 @@ export async function updateMyProfile(payload) {
   const response = await api.patch('/users/update-me', payload)
   return getApiData(response)
 }
+
+export async function getUserOverrides(id, params) {
+  const response = await api.get(`/users/get-user-overrides/${id}`, { params })
+  return getApiData(response) || []
+}
+
+export async function createUserOverride(id, payload) {
+  const response = await api.post(`/users/add-user-override/${id}`, payload)
+  return getApiData(response)
+}
+
+export async function revokeUserOverride(id, overrideId) {
+  const response = await api.patch(`/users/revoke-user-override/${id}/${overrideId}`)
+  return getApiData(response)
+}
+
+export async function getUserEffectivePermissions(id) {
+  const response = await api.get(`/users/get-user-permissions/${id}`)
+  return getApiData(response)
+}

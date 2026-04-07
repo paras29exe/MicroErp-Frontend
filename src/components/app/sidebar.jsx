@@ -37,7 +37,7 @@ export function AppSidebar() {
   const [confirmLogoutOpen, setConfirmLogoutOpen] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
 
-  const sections = useMemo(() => getSidebarSections(user?.role), [user?.role])
+  const sections = useMemo(() => getSidebarSections(user), [user])
   const activeGroups = useMemo(() => {
     return sections.reduce((acc, section) => {
       section.items.forEach((item) => {

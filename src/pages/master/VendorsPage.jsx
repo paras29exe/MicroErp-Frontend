@@ -42,9 +42,9 @@ export function VendorsPage() {
   const user = useAuthStore((state) => state.user)
   const [searchParams, setSearchParams] = useSearchParams()
 
-  const canCreate = hasPermission(user?.role, 'master:create')
-  const canUpdate = hasPermission(user?.role, 'master:update')
-  const canDelete = hasPermission(user?.role, 'master:delete')
+  const canCreate = hasPermission(user, 'master:create')
+  const canUpdate = hasPermission(user, 'master:update')
+  const canDelete = hasPermission(user, 'master:delete')
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')

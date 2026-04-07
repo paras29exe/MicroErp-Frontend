@@ -1,13 +1,22 @@
-import { getMe, refreshSession } from '@/features/auth/auth.api'
+import { getMe, getMyEffectivePermissions, refreshSession } from '@/features/auth/auth.api'
 import { useAuthStore } from '@/features/auth/auth.store'
 
 export async function bootstrapSession() {
   const { setUser, clearSession, setBootstrapping } = useAuthStore.getState()
 
+  async function loadSessionUser() {
+    const [user, permissionData] = await Promise.all([
+      getMe(),
+      getMyEffectivePermissions().catch(() => null),
+    ])
+
+    const effectivePermissions = permissionData?.effectivePermissions || []
+    setUser({ ...user, effectivePermissions })
+  }
+
   try {
     try {
-      const user = await getMe()
-      setUser(user)
+      await loadSessionUser()
       return
     } catch {
       // access token may be expired, continue with refresh flow
@@ -15,8 +24,7 @@ export async function bootstrapSession() {
 
     try {
       await refreshSession()
-      const user = await getMe()
-      setUser(user)
+      await loadSessionUser()
     } catch {
       clearSession()
     }

@@ -18,3 +18,8 @@ export async function getMe() {
   const response = await api.get('/users/me')
   return getApiData(response)
 }
+
+export async function getMyEffectivePermissions() {
+  const response = await api.get('/users/me/effective-permissions')
+  return getApiData(response)
+}

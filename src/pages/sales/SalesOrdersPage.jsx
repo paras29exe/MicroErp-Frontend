@@ -47,7 +47,8 @@ function SortIcon({ active, direction }) {
 
 export function SalesOrdersPage() {
   const user = useAuthStore((state) => state.user)
-  const canDelete = hasPermission(user?.role, 'sales:delete')
+  const canCreate = hasPermission(user, 'sales:create')
+  const canDelete = hasPermission(user, 'sales:delete')
 
   const [searchParams, setSearchParams] = useSearchParams()
   const [loading, setLoading] = useState(true)
@@ -168,11 +169,13 @@ export function SalesOrdersPage() {
         <span className="ml-4 font-semibold text-slate-700">Total:</span> {meta.total}
       </section>
 
-      <section className="flex justify-end">
-        <Button render={<Link to="/sales/new" />} className="bg-green-700 text-white hover:bg-green-800">
-          Record New Sale
-        </Button>
-      </section>
+      {canCreate && (
+        <section className="flex justify-end">
+          <Button render={<Link to="/sales/new" />} className="bg-green-700 text-white hover:bg-green-800">
+            Record New Sale
+          </Button>
+        </section>
+      )}
 
       {loading && <PageLoader text="Loading sales orders..." />}
       {error && <div className="border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}

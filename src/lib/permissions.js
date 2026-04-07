@@ -50,7 +50,32 @@ export const ROLE_PERMISSIONS = {
   ],
 }
 
-export function hasPermission(role, permission) {
-  const permissions = ROLE_PERMISSIONS[role] || []
-  return permissions.includes('*') || permissions.includes(permission)
+function normalizePermissionContext(input) {
+  if (typeof input === 'string') {
+    return { role: input, effectivePermissions: [] }
+  }
+
+  if (!input || typeof input !== 'object') {
+    return { role: '', effectivePermissions: [] }
+  }
+
+  return {
+    role: input.role || '',
+    effectivePermissions: Array.isArray(input.effectivePermissions) ? input.effectivePermissions : [],
+  }
+}
+
+export function hasPermission(roleOrUser, permission) {
+  const { role, effectivePermissions } = normalizePermissionContext(roleOrUser)
+
+  if (permission === '*') {
+    return role === 'ADMIN' || effectivePermissions.includes('*')
+  }
+
+  if (effectivePermissions.length > 0) {
+    return effectivePermissions.includes('*') || effectivePermissions.includes(permission)
+  }
+
+  const rolePermissions = ROLE_PERMISSIONS[role] || []
+  return rolePermissions.includes('*') || rolePermissions.includes(permission)
 }

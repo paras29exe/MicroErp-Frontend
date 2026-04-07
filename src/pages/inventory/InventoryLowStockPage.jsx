@@ -28,7 +28,7 @@ function getSeverityClass(stockQuantity, reorderLevel) {
 
 export function InventoryLowStockPage() {
   const user = useAuthStore((state) => state.user)
-  const canUpdate = hasPermission(user?.role, 'inventory:update')
+  const canUpdate = hasPermission(user, 'inventory:update')
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')

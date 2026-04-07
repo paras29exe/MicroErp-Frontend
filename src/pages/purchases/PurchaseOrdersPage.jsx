@@ -45,8 +45,9 @@ function SortIcon({ active, direction }) {
 
 export function PurchaseOrdersPage() {
   const user = useAuthStore((state) => state.user)
-  const canDelete = hasPermission(user?.role, 'purchase:delete')
-  const canUpdate = hasPermission(user?.role, 'purchase:update')
+  const canCreate = hasPermission(user, 'purchase:create')
+  const canDelete = hasPermission(user, 'purchase:delete')
+  const canUpdate = hasPermission(user, 'purchase:update')
 
   const [searchParams, setSearchParams] = useSearchParams()
   const [loading, setLoading] = useState(true)
@@ -248,11 +249,13 @@ export function PurchaseOrdersPage() {
         <span className="ml-4 font-semibold text-slate-700">Total:</span> {meta.total}
       </section>
 
-      <section className="flex justify-end">
-        <Button render={<Link to="/purchases/new" />} type="button" size="sm" className="bg-green-700 text-white hover:bg-green-800">
-          Record New Purchase
-        </Button>
-      </section>
+      {canCreate && (
+        <section className="flex justify-end">
+          <Button render={<Link to="/purchases/new" />} type="button" size="sm" className="bg-green-700 text-white hover:bg-green-800">
+            Record New Purchase
+          </Button>
+        </section>
+      )}
 
       {!loading && !error && (
         <section className="border border-slate-300 bg-white p-3">

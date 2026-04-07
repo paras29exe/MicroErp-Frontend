@@ -45,7 +45,7 @@ function getStockClass(row) {
 
 export function InventoryStockPage() {
   const user = useAuthStore((state) => state.user)
-  const canUpdate = hasPermission(user?.role, 'inventory:update')
+  const canUpdate = hasPermission(user, 'inventory:update')
 
   const [searchParams, setSearchParams] = useSearchParams()
   const [loading, setLoading] = useState(true)
