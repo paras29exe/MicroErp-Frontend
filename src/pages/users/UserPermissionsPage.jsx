@@ -124,12 +124,19 @@ export function UserPermissionsPage() {
     setError('')
 
     try {
+      // Convert local datetime to UTC ISO string
+      let expiresAtUTC = null
+      if (grantForm.expiresAt) {
+        const localDate = new Date(grantForm.expiresAt)
+        expiresAtUTC = localDate.toISOString()
+      }
+      
       const results = await Promise.allSettled(
         selectedGrantPermissions.map((permission) =>
           createUserOverride(userId, {
             permission,
             effect: 'GRANT',
-            expiresAt: grantForm.expiresAt || null,
+            expiresAt: expiresAtUTC || null,
             reason: grantForm.reason.trim() || null,
           }),
         ),
